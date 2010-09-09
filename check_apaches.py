@@ -14,6 +14,7 @@ plugin.add_cmdlineoption('-u', '', 'url', 'path to "server-status"', default='/s
 plugin.add_cmdlineoption('-a', '', 'httpauth', 'HTTP Username and Password, separated by ":"')
 plugin.add_cmdlineoption('-w', '', 'warn', 'warning thresold', default='20')
 plugin.add_cmdlineoption('-c', '', 'crit', 'warning thresold', default='50')
+plugin.add_cmdlineoption('', '--statistics', 'statistics', 'Output worker statistics', action='store_true')
 
 plugin.parse_cmdlineoptions()
 
@@ -53,6 +54,25 @@ try:
 	busy = int(re.search('Busy(?:Workers|Servers): (\d+)\n', data).group(1))
 except:
 	plugin.back2nagios(2, 'Could not analyze data!')
+
+states = None
+if plugin.options.statistics:
+	scoreboard = re.search('Scoreboard: (.*)\n', data)
+	if scoreboard:
+		states = {'_':0, 'S':0, 'R':0, 'W':0, 'K':0, 'D':0, 'C':0, 'L':0, 'G':0, 'I':0, '.':0,}
+		for worker in scoreboard.group(1):
+			states[worker] += 1
+		plugin.add_multilineoutput(str(states['_']) + ' waiting for connection')
+		plugin.add_multilineoutput(str(states['S']) + ' starting up')
+		plugin.add_multilineoutput(str(states['R']) + ' reading request')
+		plugin.add_multilineoutput(str(states['W']) + ' writing/sending reply')
+		plugin.add_multilineoutput(str(states['K']) + ' keepalive')
+		plugin.add_multilineoutput(str(states['D']) + ' looking up in DNS')
+		plugin.add_multilineoutput(str(states['C']) + ' closing connection')
+		plugin.add_multilineoutput(str(states['L']) + ' logging')
+		plugin.add_multilineoutput(str(states['G']) + ' gracefully finishing')
+		plugin.add_multilineoutput(str(states['I']) + ' idle cleanup of worker')
+		plugin.add_multilineoutput(str(states['.']) + ' open slots(up to ServerLimit)')
 
 returncode = plugin.value_wc_to_returncode(busy, plugin.options.warn, plugin.options.crit)
 
