@@ -124,6 +124,7 @@ class CheckNAF(SNMPMonitoringPlugin):
 			if di_spare > 1:
 				output += 's'
 		else:
+			target = 'failed' # Set to defined value
 			returncode = self.value_wc_to_returncode(di_failed, warn, crit)
 			if returncode == 0:
 				output = 'No failed disks'
@@ -198,8 +199,6 @@ class CheckNAF(SNMPMonitoringPlugin):
 		mountedon = self.SNMPGET(self.OID['df_FS_Mounted_On'] + "." + idx)
 		status = self.Status2String['df_FS_Status'].get(self.SNMPGET(self.OID['df_FS_Status'] + "." + idx))
 		fstype = self.Status2String['df_FS_Type'].get(self.SNMPGET(self.OID['df_FS_Type'] + "." + idx))
-
-		# print [mountedon, status, fstype]
 
 		fs_pctused = float(fs_used) / float(fs_total) * 100.0
 
@@ -322,12 +321,21 @@ def main():
 	while len(checks):
 		check = checks.pop()
 
+		target = None
+		arguments = None
+		if ':' in check:
+			target = ':'.join(check.split(':')[1:])
+			check = check.split(':')[0]
+			if ':' in target:
+				arguments = ':'.join(target.split(':')[1:])
+				target = target.split(':')[0]
+
 		if check == 'global':
 			result = plugin.check_global()
 		elif check == 'cpu':
 			result = plugin.check_cpu()
 		elif check == 'disk':
-			result = plugin.check_disk(target='spare')
+			result = plugin.check_disk(target=target)
 		elif check == 'nvram':
 			result = plugin.check_nvram()
 		elif check == 'version':

@@ -150,7 +150,7 @@ class MonitoringPlugin(object):
 			perfdata += str(unit).lstrip().rstrip()
 		for key in ['warn', 'crit', 'min', 'max']:
 			perfdata += ';'
-			if key in kwargs:
+			if key in kwargs and kwargs[key]!=None:
 				perfdata += str(kwargs[key])
 
 		return perfdata
