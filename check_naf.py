@@ -305,63 +305,68 @@ class CheckNAF(SNMPMonitoringPlugin):
 def main():
 	plugin = CheckNAF(pluginname='check_naf', tagforstatusline='NAF', description=u'Monitoring NetApp™ FAS systems', version='0.9')
 
-	plugin.add_cmdlineoption('', '--check', 'check', 'check or list of checks', default='')
-	plugin.add_cmdlineoption('', '--target', 'target', 'target or list of targets', default='')
-	plugin.add_cmdlineoption('-w', '', 'warn', 'warning thresold or a list of it', default='')
-	plugin.add_cmdlineoption('-c', '', 'crit', 'warning thresold or a list of it', default='')
+	plugin.add_cmdlineoption('', '--check', 'check', 'OBSOLETE - use new syntax!', default='')
+	plugin.add_cmdlineoption('', '--target', 'target', 'OBSOLETE - use new syntax!', default='')
+	plugin.add_cmdlineoption('-w', '', 'warn', 'OBSOLETE - use new syntax!', default='')
+	plugin.add_cmdlineoption('-c', '', 'crit', 'OBSOLETE - use new syntax!', default='')
 	plugin.parse_cmdlineoptions()
 
 	plugin.prepare_snmp()
 
-	if ',' in plugin.options.check:
-		checks = plugin.options.check.split(',')
-		checks.reverse()
-	else:
-		checks = [plugin.options.check,]
+	if plugin.options.check or plugin.options.target:
+		import sys
+		arguments = plugin.options.check
+		for s in [plugin.options.target, plugin.options.warn, plugin.options.crit]:
+			arguments += ':' + s
+		plugin.back2nagios(3, 'Obsolete syntax - please use new syntax: "%s %s"' % (sys.argv[0], arguments))
 
-	if ',' in plugin.options.target:
-		targets = plugin.options.target.split(',')
-	else:
-		targets = [plugin.options.target,]
 
-	while len(checks):
-		check = checks.pop()
+	checks = []
 
-		target = None
-		arguments = None
-		if ':' in check:
-			target = ':'.join(check.split(':')[1:])
-			check = check.split(':')[0]
-			if ':' in target:
-				arguments = ':'.join(target.split(':')[1:])
-				target = target.split(':')[0]
+	for quad in plugin.args:
+		quad = quad.split(':')
+		quad = (quad + ['', '', ''])[:4] # Fix length to 4, fill with ''
+
+		# Convert list of checks to list
+		if ',' in quad[0]:
+			quad[0] = quad[0].split(',')
+		else:
+			quad[0] = [quad[0],]
+
+		# Convert list of targets to list
+		if ',' in quad[1]:
+			quad[1] = quad[1].split(',')
+		else:
+			quad[1] = [quad[1],]
+
+		for target in quad[1]:
+			for check in quad[0]:
+				checks.append(tuple([check, target, quad[2], quad[3]]))
+
+	if len(checks) == 0:
+		plugin.back2nagios(3, 'No check specified!')
+
+	for quad in checks:
+		(check, target, warn, crit) = tuple(quad)
 
 		if check == 'global':
 			result = plugin.check_global()
 		elif check == 'cpu':
-			result = plugin.check_cpu()
+			result = plugin.check_cpu(warn=warn, crit=crit)
 		elif check == 'disk':
-			result = plugin.check_disk(target=target)
+			result = plugin.check_disk(target=target, warn=warn, crit=crit)
 		elif check == 'nvram':
 			result = plugin.check_nvram()
 		elif check == 'version':
 			result = plugin.check_version()
-
-		elif check.startswith('vol_'):
-			combinedchecks = [check,]
-			while len(checks) > 0 and checks[0].startswith('vol_'):
-				combinedchecks.append(checks.pop())
-
-			for target in targets:
-				for check in combinedchecks:
-					if check == 'vol_data':
-						result = plugin.check_vol_data(target, plugin.options.warn, plugin.options.crit)
-					elif check == 'vol_snap':
-						result = plugin.check_vol_snap(target, plugin.options.warn, plugin.options.crit)
-					elif check =='vol_inode':
-						result = plugin.check_vol_inode(target, plugin.options.warn, plugin.options.crit)
-					elif check =='vol_files':
-						result = plugin.check_vol_files(target, plugin.options.warn, plugin.options.crit)
+		elif check == 'vol_data':
+			result = plugin.check_vol_data(volume=target, warn=warn, crit=crit)
+		elif check == 'vol_snap':
+			result = plugin.check_vol_snap(volume=target, warn=warn, crit=crit)
+		elif check =='vol_inode':
+			result = plugin.check_vol_inode(volume=target, warn=warn, crit=crit)
+		elif check =='vol_files':
+			result = plugin.check_vol_files(volume=target, warn=warn, crit=crit)
 
 	# from pprint import pprint
 	# pprint(plugin.dump_brain())
