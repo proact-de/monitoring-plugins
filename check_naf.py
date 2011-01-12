@@ -92,6 +92,11 @@ class CheckNAF(SNMPMonitoringPlugin):
 		# cputimeidle = int(self.SNMPGET(self.OID['CPU_Time_Idle']))
 		cpu_cs = self.SNMPGET(self.OID['CPU_Context_Switches'])
 
+		if '%' in warn:
+			warn = warn[:-1]
+		if '%' in crit:
+			crit = crit[:-1]
+
 		returncode = self.value_wc_to_returncode(cpu_timebusy, warn, crit)
 		output = 'CPU ' + str(cpu_timebusy) + '% busy, CPU architecture: ' + self.Status2String['CPU_Arch'].get(cpu_arch)
 		perfdata = []
@@ -148,6 +153,7 @@ class CheckNAF(SNMPMonitoringPlugin):
 		perfdata.append(pd)
 
 		return self.remember_check('disk', returncode, output, perfdata=perfdata, target=target)
+
 
 	def check_global(self):
 		model = self.SNMPGET(self.OID['Model'])
