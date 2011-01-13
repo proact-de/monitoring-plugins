@@ -93,7 +93,10 @@ class MonitoringPlugin(object):
 
 
 	def value_in_range(self, value, range):
-		(low, high, negate) = self.range_to_limits(range)
+		if range not in ['', None]:
+			(low, high, negate) = self.range_to_limits(range)
+		else:
+			return True
 
 		if value < low or value > high:
 			result = False
