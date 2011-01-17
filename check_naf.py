@@ -40,6 +40,18 @@ class CheckNAF(SNMPMonitoringPlugin):
 			'Disks_ZeroDisks': '.1.3.6.1.4.1.789.1.6.4.9.0',
 			'Disks_Failed_Descr': '.1.3.6.1.4.1.789.1.6.4.10.0',
 
+			'ExtCache_Type': '.1.3.6.1.4.1.789.1.26.1.0',
+			'ExtCache_SubType': '.1.3.6.1.4.1.789.1.26.2.0',
+			'ExtCache_Size': '.1.3.6.1.4.1.789.1.26.4.0',
+			'ExtCache_Usedsize': '.1.3.6.1.4.1.789.1.26.5.0',
+			'ExtCache_Options': '.1.3.6.1.4.1.789.1.26.7.0',
+			'ExtCache_Hits': '.1.3.6.1.4.1.789.1.26.8.0',
+			'ExtCache_Misses': '.1.3.6.1.4.1.789.1.26.9.0',
+			'ExtCache_Inserts': '.1.3.6.1.4.1.789.1.26.10.0',
+			'ExtCache_Evicts': '.1.3.6.1.4.1.789.1.26.11.0',
+			'ExtCache_Invalidates': '.1.3.6.1.4.1.789.1.26.12.0',
+			'ExtCache_MetaData': '.1.3.6.1.4.1.789.1.26.15.0',
+
 			'Global_Status': '.1.3.6.1.4.1.789.1.2.2.4.0',
 			'Global_Status_Message': '.1.3.6.1.4.1.789.1.2.2.25.0',
 
@@ -64,18 +76,6 @@ class CheckNAF(SNMPMonitoringPlugin):
 			'df_FS_MaxFilesAvail': '.1.3.6.1.4.1.789.1.5.4.1.11',
 			'df_FS_MaxFilesUsed': '.1.3.6.1.4.1.789.1.5.4.1.12',
 			'df_FS_MaxFilesPossible': '.1.3.6.1.4.1.789.1.5.4.1.13',
-
-			'extcache_Type': '.1.3.6.1.4.1.789.1.26.1.0',
-			'extcache_SubType': '.1.3.6.1.4.1.789.1.26.2.0',
-			'extcache_Size': '.1.3.6.1.4.1.789.1.26.4.0',
-			'extcache_Usedsize': '.1.3.6.1.4.1.789.1.26.5.0',
-			'extcache_Options': '.1.3.6.1.4.1.789.1.26.7.0',
-			'extcache_Hits': '.1.3.6.1.4.1.789.1.26.8.0',
-			'extcache_Misses': '.1.3.6.1.4.1.789.1.26.9.0',
-			'extcache_Inserts': '.1.3.6.1.4.1.789.1.26.10.0',
-			'extcache_Evicts': '.1.3.6.1.4.1.789.1.26.11.0',
-			'extcache_Invalidates': '.1.3.6.1.4.1.789.1.26.12.0',
-			'extcache_MetaData': '.1.3.6.1.4.1.789.1.26.15.0',
 			}
 
 	OWC = {
@@ -171,14 +171,14 @@ class CheckNAF(SNMPMonitoringPlugin):
 		if self.options.snmpversion in [1, '1']:
 			return self.remember_check('extcache', self.RETURNCODE['UNKNOWN'], 'Need SNMP v2c/v3 for "extcache" check!',)
 
-		ec_size = long(self.SNMPGET(self.OID['extcache_Size']))
-		ec_usedsize = long(self.SNMPGET(self.OID['extcache_Usedsize']))
-		ec_hits = long(self.SNMPGET(self.OID['extcache_Hits']))
-		# ec_meta = long(self.SNMPGET(self.OID['extcache_MetaData']))
-		ec_miss = long(self.SNMPGET(self.OID['extcache_Misses']))
-		ec_evict = long(self.SNMPGET(self.OID['extcache_Evicts']))
-		ec_inval = long(self.SNMPGET(self.OID['extcache_Invalidates']))
-		ec_insert = long(self.SNMPGET(self.OID['extcache_Inserts']))
+		ec_size = long(self.SNMPGET(self.OID['ExtCache_Size']))
+		ec_usedsize = long(self.SNMPGET(self.OID['ExtCache_Usedsize']))
+		ec_hits = long(self.SNMPGET(self.OID['ExtCache_Hits']))
+		# ec_meta = long(self.SNMPGET(self.OID['ExtCache_MetaData']))
+		ec_miss = long(self.SNMPGET(self.OID['ExtCache_Misses']))
+		ec_evict = long(self.SNMPGET(self.OID['ExtCache_Evicts']))
+		ec_inval = long(self.SNMPGET(self.OID['ExtCache_Invalidates']))
+		ec_insert = long(self.SNMPGET(self.OID['ExtCache_Inserts']))
 
 		ec_usage = float(ec_usedsize) / float(ec_size) * 100.0
 		ec_hitpct = float(ec_hits) / float(ec_hits + ec_miss) * 100.0
@@ -198,10 +198,10 @@ class CheckNAF(SNMPMonitoringPlugin):
 
 
 	def check_extcache_info(self):
-		ec_type = self.SNMPGET(self.OID['extcache_Type'])
-		ec_subtype = self.SNMPGET(self.OID['extcache_SubType'])
-		ec_size = long(self.SNMPGET(self.OID['extcache_Size']))
-		ec_options = self.SNMPGET(self.OID['extcache_Options'])
+		ec_type = self.SNMPGET(self.OID['ExtCache_Type'])
+		ec_subtype = self.SNMPGET(self.OID['ExtCache_SubType'])
+		ec_size = long(self.SNMPGET(self.OID['ExtCache_Size']))
+		ec_options = self.SNMPGET(self.OID['ExtCache_Options'])
 
 		ec_size_human = self.value_to_human_binary(ec_size, unit='B')
 
