@@ -182,8 +182,9 @@ class CheckNAF(SNMPMonitoringPlugin):
 
 		ec_usage = float(ec_usedsize) / float(ec_size) * 100.0
 		ec_hitpct = float(ec_hits) / float(ec_hits + ec_miss) * 100.0
+		ec_size_human = self.value_to_human_binary(ec_size, unit='B')
 
-		output = 'Cache usage %5.2f%%, total hits %5.2f%% ' % (ec_usage, ec_hitpct)
+		output = 'Cache size %s, cache usage %5.2f%%, total hits %5.2f%% ' % (ec_size_human, ec_usage, ec_hitpct)
 		returncode = 0
 		perfdata = []
 		perfdata.append({'label':'nacache_usage', 'value':float('%5.2f' % ec_usage), 'unit':'%'})
@@ -199,9 +200,12 @@ class CheckNAF(SNMPMonitoringPlugin):
 	def check_extcache_info(self):
 		ec_type = self.SNMPGET(self.OID['extcache_Type'])
 		ec_subtype = self.SNMPGET(self.OID['extcache_SubType'])
+		ec_size = long(self.SNMPGET(self.OID['extcache_Size']))
 		ec_options = self.SNMPGET(self.OID['extcache_Options'])
 
-		output = 'Cache type: "' + ec_type + '/' + ec_subtype + '", options: "' + ec_options + '"'
+		ec_size_human = self.value_to_human_binary(ec_size, unit='B')
+
+		output = 'Cache type: "' + ec_type + '/' + ec_subtype + '", size: ' + ec_size_human + ', options: "' + ec_options + '"'
 		returncode = 0
 
 		return self.remember_check('extcache_info', returncode, output)
