@@ -405,7 +405,7 @@ def main():
 	for quad in checks:
 		(check, target, warn, crit) = tuple(quad)
 
-		if check == 'global':
+		if check == 'global' or check == 'environment':
 			result = plugin.check_global()
 		elif check == 'cpu':
 			result = plugin.check_cpu(warn=warn, crit=crit)
