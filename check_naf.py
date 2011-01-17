@@ -25,6 +25,11 @@ from monitoringplugin import SNMPMonitoringPlugin
 
 class CheckNAF(SNMPMonitoringPlugin):
 	OID = {
+			'Cluster_Settings': '.1.3.6.1.4.1.789.1.2.3.1.0',
+			'Cluster_State': '.1.3.6.1.4.1.789.1.2.3.2.0',
+			'Cluster_InterconnectStatus': '.1.3.6.1.4.1.789.1.2.3.8.0',
+			'Cluster_CannotTakeOverCause': '.1.3.6.1.4.1.789.1.2.3.3.0',
+
 			'CPU_Arch': '.1.3.6.1.4.1.789.1.1.11.0',
 			'CPU_Time_Busy': '.1.3.6.1.4.1.789.1.2.1.3.0',
 			'CPU_Time_Idle': '.1.3.6.1.4.1.789.1.2.1.5.0',
@@ -79,11 +84,18 @@ class CheckNAF(SNMPMonitoringPlugin):
 			}
 
 	OWC = {
+			'Cluster_InterconnectStatus': ( (4,), (3,), (1,2,), ),
+			'Cluster_Settings': ( (2,), (1,3,4,), (5,), ),
+			'Cluster_State': ( (2,4,), (), (1,3,), ),
 			'Global_Status': ( (3,), (4,), (5,6), ),
 			'NVRAM_Status': ( (1,9), (2,5,8), (3,4,6), ),
 			}
 
 	Status2String = {
+			'Cluster_CannotTakeOverCause': { '1' : 'ok', '2' : 'unknownReason', '3' : 'disabledByOperator', '4' : 'interconnectOffline', '5' : 'disabledByPartner', '6' : 'takeoverFailed', },
+			'Cluster_InterconnectStatus': { '1' : 'notPresent', '2' : 'down', '3' : 'partialFailure', '4' : 'up', },
+			'Cluster_Settings': { '1' : 'notConfigured', '2' : 'enabled', '3' : 'disabled', '4' : 'takeoverByPartnerDisabled', '5' : 'thisNodeDead', },
+			'Cluster_State': { '1' : 'dead', '2' : 'canTakeover', '3' : 'cannotTakeover', '4' : 'takeover', },
 			'CPU_Arch' : { '1' : 'x86', '2' : 'alpha', '3' : 'mips', '4' : 'sparc', '5' : 'amd64', },
 			'NVRAM_Status' : { '1' : 'ok', '2' : 'partiallyDischarged', '3' : 'fullyDischarged', '4' : 'notPresent', '5' : 'nearEndOfLife', '6' : 'atEndOfLife', '7' : 'unknown', '8' : 'overCharged', '9' : 'fullyCharged', },
 			'df_FS_Status' : { '1' : 'unmounted', '2' : 'mounted', '3' : 'frozen', '4' : 'destroying', '5' : 'creating', '6' : 'mounting', '7' : 'unmounting', '8' : 'nofsinfo', '9' : 'replaying', '10': 'replayed', },
@@ -121,6 +133,31 @@ class CheckNAF(SNMPMonitoringPlugin):
 		perfdata.append({'label':'nacs', 'value':cpu_cs, 'unit':'c'})
 
 		return self.remember_check('cpu', returncode, output, perfdata=perfdata)
+
+
+	def check_cluster(self):
+		cl_settings = int(self.SNMPGET(self.OID['Cluster_Settings']))
+		if cl_settings == 1: # notConfigured
+			return self.remember_check('cluster', self.RETURNCODE['WARNING'], 'No cluster configured!')
+
+		cl_state = int(self.SNMPGET(self.OID['Cluster_State']))
+		cl_interconnectstatus = int(self.SNMPGET(self.OID['Cluster_InterconnectStatus']))
+
+		returncode = []
+		returncode.append(self.map_status_to_returncode(cl_settings, self.OWC['Cluster_Settings']))
+		returncode.append(self.map_status_to_returncode(cl_state, self.OWC['Cluster_State']))
+		returncode.append(self.map_status_to_returncode(cl_interconnectstatus, self.OWC['Cluster_InterconnectStatus']))
+		returncode = max(returncode)
+
+		output = 'Settings: ' + self.Status2String['Cluster_Settings'][str(cl_settings)] + ', '
+		output += 'state: ' + self.Status2String['Cluster_State'][str(cl_state)] + ', '
+		output += 'interconnect state: ' + self.Status2String['Cluster_InterconnectStatus'][str(cl_interconnectstatus)]
+
+		if cl_state == 4: # cannotTakeover
+			cl_cannottakeovercause = self.SNMPGET(self.OID['Cluster_CannotTakeOverCause'])
+			output = 'Cannot takeover, reason: ' + self.Status2String['Cluster_CannotTakeOverCause'][cl_cannottakeovercause] + '! ' + output
+
+		return self.remember_check('cluster', returncode, output)
 
 
 	def check_disk(self, target='failed', warn='', crit=''):
@@ -407,6 +444,8 @@ def main():
 
 		if check == 'global' or check == 'environment':
 			result = plugin.check_global()
+		elif check == 'cluster':
+			result = plugin.check_cluster()
 		elif check == 'cpu':
 			result = plugin.check_cpu(warn=warn, crit=crit)
 		elif check == 'disk':
