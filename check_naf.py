@@ -344,7 +344,7 @@ def main():
 				checks.append(tuple([check, target, quad[2], quad[3]]))
 
 	if len(checks) == 0:
-		plugin.back2nagios(3, 'No check specified!')
+		checks = [('global','','','')]
 
 	for quad in checks:
 		(check, target, warn, crit) = tuple(quad)
@@ -367,6 +367,9 @@ def main():
 			result = plugin.check_vol_inode(volume=target, warn=warn, crit=crit)
 		elif check =='vol_files':
 			result = plugin.check_vol_files(volume=target, warn=warn, crit=crit)
+		else:
+			result = plugin.remember_check(check, plugin.RETURNCODE['UNKNOWN'], 'Unknown check "' + check + '"!')
+
 
 	# from pprint import pprint
 	# pprint(plugin.dump_brain())
