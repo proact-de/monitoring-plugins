@@ -64,6 +64,18 @@ class CheckNAF(SNMPMonitoringPlugin):
 			'df_FS_MaxFilesAvail': '.1.3.6.1.4.1.789.1.5.4.1.11',
 			'df_FS_MaxFilesUsed': '.1.3.6.1.4.1.789.1.5.4.1.12',
 			'df_FS_MaxFilesPossible': '.1.3.6.1.4.1.789.1.5.4.1.13',
+
+			'extcache_Type': '.1.3.6.1.4.1.789.1.26.1.0',
+			'extcache_SubType': '.1.3.6.1.4.1.789.1.26.2.0',
+			'extcache_Size': '.1.3.6.1.4.1.789.1.26.4.0',
+			'extcache_Usedsize': '.1.3.6.1.4.1.789.1.26.5.0',
+			'extcache_Options': '.1.3.6.1.4.1.789.1.26.7.0',
+			'extcache_Hits': '.1.3.6.1.4.1.789.1.26.8.0',
+			'extcache_Misses': '.1.3.6.1.4.1.789.1.26.9.0',
+			'extcache_Inserts': '.1.3.6.1.4.1.789.1.26.10.0',
+			'extcache_Evicts': '.1.3.6.1.4.1.789.1.26.11.0',
+			'extcache_Invalidates': '.1.3.6.1.4.1.789.1.26.12.0',
+			'extcache_MetaData': '.1.3.6.1.4.1.789.1.26.15.0',
 			}
 
 	OWC = {
@@ -153,6 +165,46 @@ class CheckNAF(SNMPMonitoringPlugin):
 		perfdata.append(pd)
 
 		return self.remember_check('disk', returncode, output, perfdata=perfdata, target=target)
+
+
+	def check_extcache(self):
+		if self.options.snmpversion in [1, '1']:
+			return self.remember_check('extcache', self.RETURNCODE['UNKNOWN'], 'Need SNMP v2c/v3 for "extcache" check!',)
+
+		ec_size = long(self.SNMPGET(self.OID['extcache_Size']))
+		ec_usedsize = long(self.SNMPGET(self.OID['extcache_Usedsize']))
+		ec_hits = long(self.SNMPGET(self.OID['extcache_Hits']))
+		# ec_meta = long(self.SNMPGET(self.OID['extcache_MetaData']))
+		ec_miss = long(self.SNMPGET(self.OID['extcache_Misses']))
+		ec_evict = long(self.SNMPGET(self.OID['extcache_Evicts']))
+		ec_inval = long(self.SNMPGET(self.OID['extcache_Invalidates']))
+		ec_insert = long(self.SNMPGET(self.OID['extcache_Inserts']))
+
+		ec_usage = float(ec_usedsize) / float(ec_size) * 100.0
+		ec_hitpct = float(ec_hits) / float(ec_hits + ec_miss) * 100.0
+
+		output = 'Cache usage %5.2f%%, total hits %5.2f%% ' % (ec_usage, ec_hitpct)
+		returncode = 0
+		perfdata = []
+		perfdata.append({'label':'nacache_usage', 'value':float('%5.2f' % ec_usage), 'unit':'%'})
+		perfdata.append({'label':'nacache_hits', 'value':ec_hits, 'unit':'c'})
+		perfdata.append({'label':'nacache_miss', 'value':ec_miss, 'unit':'c'})
+		perfdata.append({'label':'nacache_evict', 'value':ec_evict, 'unit':'c'})
+		perfdata.append({'label':'nacache_inval', 'value':ec_inval, 'unit':'c'})
+		perfdata.append({'label':'nacache_insert', 'value':ec_insert, 'unit':'c'})
+
+		return self.remember_check('extcache', returncode, output, perfdata=perfdata)
+
+
+	def check_extcache_info(self):
+		ec_type = self.SNMPGET(self.OID['extcache_Type'])
+		ec_subtype = self.SNMPGET(self.OID['extcache_SubType'])
+		ec_options = self.SNMPGET(self.OID['extcache_Options'])
+
+		output = 'Cache type: "' + ec_type + '/' + ec_subtype + '", options: "' + ec_options + '"'
+		returncode = 0
+
+		return self.remember_check('extcache_info', returncode, output)
 
 
 	def check_global(self):
@@ -355,6 +407,10 @@ def main():
 			result = plugin.check_cpu(warn=warn, crit=crit)
 		elif check == 'disk':
 			result = plugin.check_disk(target=target, warn=warn, crit=crit)
+		elif check == 'extcache':
+			result = plugin.check_extcache()
+		elif check == 'extcache_info':
+			result = plugin.check_extcache_info()
 		elif check == 'nvram':
 			result = plugin.check_nvram()
 		elif check == 'version':
