@@ -62,6 +62,10 @@ class CheckNAF(SNMPMonitoringPlugin):
 
 			'NVRAM_Status': '.1.3.6.1.4.1.789.1.2.5.1.0',
 
+			'OPs_NFS': ['.1.3.6.1.4.1.789.1.2.2.27.0', '.1.3.6.1.4.1.789.1.2.2.6.0', '.1.3.6.1.4.1.789.1.2.2.5.0',],
+			'OPs_CIFS': ['.1.3.6.1.4.1.789.1.2.2.28.0','.1.3.6.1.4.1.789.1.2.2.8.0', '.1.3.6.1.4.1.789.1.2.2.7.0',],
+			'OPs_HTTP': ['.1.3.6.1.4.1.789.1.2.2.29.0','.1.3.6.1.4.1.789.1.2.2.10.0', '.1.3.6.1.4.1.789.1.2.2.9.0',],
+
 			'Model': '.1.3.6.1.4.1.789.1.1.5.0',
 			'ONTAP_Version': '.1.3.6.1.4.1.789.1.1.2.0',
 
@@ -222,7 +226,7 @@ class CheckNAF(SNMPMonitoringPlugin):
 		ec_size_human = self.value_to_human_binary(ec_size, unit='B')
 
 		output = 'Cache size %s, cache usage %5.2f%%, total hits %5.2f%% ' % (ec_size_human, ec_usage, ec_hitpct)
-		returncode = 0
+		returncode = self.RETURNCODE['OK']
 		perfdata = []
 		perfdata.append({'label':'nacache_usage', 'value':float('%5.2f' % ec_usage), 'unit':'%'})
 		perfdata.append({'label':'nacache_hits', 'value':ec_hits, 'unit':'c'})
@@ -266,6 +270,21 @@ class CheckNAF(SNMPMonitoringPlugin):
 		output = 'NVRAM battery status is "' + self.Status2String['NVRAM_Status'].get(str(nvramstatus)) + '"'
 
 		return self.remember_check('nvram', returncode, output)
+
+
+	def check_ops(self):
+		ops_nfs = self.SNMPGET(self.OID['OPs_NFS'])
+		ops_cifs = self.SNMPGET(self.OID['OPs_CIFS'])
+		ops_http = self.SNMPGET(self.OID['OPs_HTTP'])
+
+		output = 'Total ops statistics'
+		returncode = self.RETURNCODE['OK']
+		perfdata = []
+		perfdata.append({'label':'naops_nfs', 'value':ops_nfs, 'unit':'c'})
+		perfdata.append({'label':'naops_cifs', 'value':ops_cifs, 'unit':'c'})
+		perfdata.append({'label':'naops_http', 'value':ops_http, 'unit':'c'})
+
+		return self.remember_check('ops', returncode, output, perfdata=perfdata)
 
 
 	def check_version(self):
@@ -456,6 +475,8 @@ def main():
 			result = plugin.check_extcache_info()
 		elif check == 'nvram':
 			result = plugin.check_nvram()
+		elif check == 'ops':
+			result = plugin.check_ops()
 		elif check == 'version':
 			result = plugin.check_version()
 		elif check == 'vol_data':

@@ -467,22 +467,25 @@ class SNMPMonitoringPlugin(MonitoringPlugin):
 
 
 	def SNMPGET(self, baseoid, idx=None, exitonerror=True):
-		if type(baseoid) in (list, tuple) and idx != None:
-			idx = str(idx)
+		if type(baseoid) in (list, tuple):
+			if idx not in ['', None]:
+				idx = '.' + str(idx)
+			else:
+				idx = ''
 
 			if self.options.snmpversion in [1, '1']:
-				value_low = long(self.SNMPGET_wrapper(baseoid[1] + '.' + idx, exitonerror=exitonerror))
+				value_low = long(self.SNMPGET_wrapper(baseoid[1] +  idx, exitonerror=exitonerror))
 				if value_low < 0L:
 					value_low += 2 ** 32
 
-				value_hi = long(self.SNMPGET_wrapper(baseoid[2] + '.' + idx, exitonerror=exitonerror))
+				value_hi = long(self.SNMPGET_wrapper(baseoid[2] + idx, exitonerror=exitonerror))
 				if value_hi < 0L:
 					value_hi += 2 ** 32
 
 				return value_hi * 2L ** 32L + value_low
 
 			elif self.options.snmpversion in [2, 3, '2', '2c', '3']:
-				return long(self.SNMPGET_wrapper(baseoid[0] + '.' + idx, exitonerror=exitonerror))
+				return long(self.SNMPGET_wrapper(baseoid[0] + idx, exitonerror=exitonerror))
 
 		elif type(baseoid) in (str, ) and idx != None:
 			return self.SNMPGET_wrapper(baseoid + str(idx), exitonerror=exitonerror)
