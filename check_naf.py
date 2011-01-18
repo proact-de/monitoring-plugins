@@ -60,11 +60,24 @@ class CheckNAF(SNMPMonitoringPlugin):
 			'Global_Status': '.1.3.6.1.4.1.789.1.2.2.4.0',
 			'Global_Status_Message': '.1.3.6.1.4.1.789.1.2.2.25.0',
 
+			'IO_DiskReadBy': ['.1.3.6.1.4.1.789.1.2.2.32.0', '.1.3.6.1.4.1.789.1.2.2.16.0', '.1.3.6.1.4.1.789.1.2.2.15.0',],
+			'IO_DiskWriteBy': ['.1.3.6.1.4.1.789.1.2.2.33.0', '.1.3.6.1.4.1.789.1.2.2.18.0', '.1.3.6.1.4.1.789.1.2.2.17.0',],
+			'IO_NetInBy': ['.1.3.6.1.4.1.789.1.2.2.30.0', '.1.3.6.1.4.1.789.1.2.2.12.0', '.1.3.6.1.4.1.789.1.2.2.11.0',],
+			'IO_NetOutBy': ['.1.3.6.1.4.1.789.1.2.2.31.0', '.1.3.6.1.4.1.789.1.2.2.14.0', '.1.3.6.1.4.1.789.1.2.2.13.0',],
+			'IO_TapeReadBy': ['.1.3.6.1.4.1.789.1.2.2.34.0', '.1.3.6.1.4.1.789.1.2.2.20.0', '.1.3.6.1.4.1.789.1.2.2.19.0',],
+			'IO_TapeWriteBy': ['.1.3.6.1.4.1.789.1.2.2.35.0', '.1.3.6.1.4.1.789.1.2.2.22.0', '.1.3.6.1.4.1.789.1.2.2.21.0',],
+			'IO_FCPReadBy': ['.1.3.6.1.4.1.789.1.17.20.0', '.1.3.6.1.4.1.789.1.17.3.0', '.1.3.6.1.4.1.789.1.17.4.0',],
+			'IO_FCPWriteBy': ['.1.3.6.1.4.1.789.1.17.21.0', '.1.3.6.1.4.1.789.1.17.5.0', '.1.3.6.1.4.1.789.1.17.6.0',],
+			'IO_iSCSIReadBy': ['.1.3.6.1.4.1.789.1.17.22.0', '.1.3.6.1.4.1.789.1.17.7.0', '.1.3.6.1.4.1.789.1.17.8.0',],
+			'IO_iSCSIWriteBy': ['.1.3.6.1.4.1.789.1.17.23.0', '.1.3.6.1.4.1.789.1.17.9.0', '.1.3.6.1.4.1.789.1.17.10.0',],
+
 			'NVRAM_Status': '.1.3.6.1.4.1.789.1.2.5.1.0',
 
 			'OPs_NFS': ['.1.3.6.1.4.1.789.1.2.2.27.0', '.1.3.6.1.4.1.789.1.2.2.6.0', '.1.3.6.1.4.1.789.1.2.2.5.0',],
-			'OPs_CIFS': ['.1.3.6.1.4.1.789.1.2.2.28.0','.1.3.6.1.4.1.789.1.2.2.8.0', '.1.3.6.1.4.1.789.1.2.2.7.0',],
-			'OPs_HTTP': ['.1.3.6.1.4.1.789.1.2.2.29.0','.1.3.6.1.4.1.789.1.2.2.10.0', '.1.3.6.1.4.1.789.1.2.2.9.0',],
+			'OPs_CIFS': ['.1.3.6.1.4.1.789.1.2.2.28.0', '.1.3.6.1.4.1.789.1.2.2.8.0', '.1.3.6.1.4.1.789.1.2.2.7.0',],
+			'OPs_HTTP': ['.1.3.6.1.4.1.789.1.2.2.29.0', '.1.3.6.1.4.1.789.1.2.2.10.0', '.1.3.6.1.4.1.789.1.2.2.9.0',],
+			'OPs_FCP': ['.1.3.6.1.4.1.789.1.17.25.0', '.1.3.6.1.4.1.789.1.17.14.0', '.1.3.6.1.4.1.789.1.17.13.0',],
+			'OPs_iSCSI': ['.1.3.6.1.4.1.789.1.17.24.0', '.1.3.6.1.4.1.789.1.17.12.0', '.1.3.6.1.4.1.789.1.17.11.0',],
 
 			'Model': '.1.3.6.1.4.1.789.1.1.5.0',
 			'ONTAP_Version': '.1.3.6.1.4.1.789.1.1.2.0',
@@ -263,6 +276,35 @@ class CheckNAF(SNMPMonitoringPlugin):
 		return self.remember_check('global', returncode, output)
 
 
+	def check_io(self):
+		disk_read = self.SNMPGET(self.OID['IO_DiskReadBy'])
+		disk_write = self.SNMPGET(self.OID['IO_DiskWriteBy'])
+		net_in = self.SNMPGET(self.OID['IO_NetInBy'])
+		net_out = self.SNMPGET(self.OID['IO_NetOutBy'])
+		tape_read = self.SNMPGET(self.OID['IO_TapeReadBy'])
+		tape_write = self.SNMPGET(self.OID['IO_TapeWriteBy'])
+		fcp_read = self.SNMPGET(self.OID['IO_FCPReadBy'])
+		fcp_write = self.SNMPGET(self.OID['IO_FCPWriteBy'])
+		iscsi_read = self.SNMPGET(self.OID['IO_iSCSIReadBy'])
+		iscsi_write = self.SNMPGET(self.OID['IO_iSCSIWriteBy'])
+
+		output = 'I/O statistics'
+		returncode = self.RETURNCODE['OK']
+		perfdata = []
+		perfdata.append({'label':'naio_netin', 'value':net_in, 'unit':'c'})
+		perfdata.append({'label':'naio_netout', 'value':net_out, 'unit':'c'})
+		perfdata.append({'label':'naio_diskread', 'value':disk_read, 'unit':'c'})
+		perfdata.append({'label':'naio_diskwrite', 'value':disk_write, 'unit':'c'})
+		perfdata.append({'label':'naio_taperead', 'value':tape_read, 'unit':'c'})
+		perfdata.append({'label':'naio_tapewrite', 'value':tape_write, 'unit':'c'})
+		perfdata.append({'label':'naio_fcpread', 'value':fcp_read, 'unit':'c'})
+		perfdata.append({'label':'naio_fcpwrite', 'value':fcp_write, 'unit':'c'})
+		perfdata.append({'label':'naio_iscsiread', 'value':iscsi_read, 'unit':'c'})
+		perfdata.append({'label':'naio_iscsiwrite', 'value':iscsi_write, 'unit':'c'})
+
+		return self.remember_check('ops', returncode, output, perfdata=perfdata)
+
+
 	def check_nvram(self):
 		nvramstatus = int(self.SNMPGET(self.OID['NVRAM_Status']))
 
@@ -276,6 +318,8 @@ class CheckNAF(SNMPMonitoringPlugin):
 		ops_nfs = self.SNMPGET(self.OID['OPs_NFS'])
 		ops_cifs = self.SNMPGET(self.OID['OPs_CIFS'])
 		ops_http = self.SNMPGET(self.OID['OPs_HTTP'])
+		ops_fcp = self.SNMPGET(self.OID['OPs_FCP'])
+		ops_iscsi = self.SNMPGET(self.OID['OPs_iSCSI'])
 
 		output = 'Total ops statistics'
 		returncode = self.RETURNCODE['OK']
@@ -283,6 +327,8 @@ class CheckNAF(SNMPMonitoringPlugin):
 		perfdata.append({'label':'naops_nfs', 'value':ops_nfs, 'unit':'c'})
 		perfdata.append({'label':'naops_cifs', 'value':ops_cifs, 'unit':'c'})
 		perfdata.append({'label':'naops_http', 'value':ops_http, 'unit':'c'})
+		perfdata.append({'label':'naops_fcp', 'value':ops_fcp, 'unit':'c'})
+		perfdata.append({'label':'naops_iscsi', 'value':ops_iscsi, 'unit':'c'})
 
 		return self.remember_check('ops', returncode, output, perfdata=perfdata)
 
@@ -473,6 +519,8 @@ def main():
 			result = plugin.check_extcache()
 		elif check == 'extcache_info':
 			result = plugin.check_extcache_info()
+		elif check == 'io':
+			result = plugin.check_io()
 		elif check == 'nvram':
 			result = plugin.check_nvram()
 		elif check == 'ops':
