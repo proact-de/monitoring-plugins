@@ -302,7 +302,7 @@ class CheckNAF(SNMPMonitoringPlugin):
 		perfdata.append({'label':'naio_iscsiread', 'value':iscsi_read, 'unit':'c'})
 		perfdata.append({'label':'naio_iscsiwrite', 'value':iscsi_write, 'unit':'c'})
 
-		return self.remember_check('ops', returncode, output, perfdata=perfdata)
+		return self.remember_check('io', returncode, output, perfdata=perfdata)
 
 
 	def check_nvram(self):
