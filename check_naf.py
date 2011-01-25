@@ -344,14 +344,20 @@ class CheckNAF(SNMPMonitoringPlugin):
 		if volume.endswith('.snapshot'):
 			return None
 
-		idx = str(self.find_in_table(self.OID['df_FS_Index'], self.OID['df_FS_Name'] , volume))
-		sn_idx = int(idx) + 1
+		idx = self.find_in_table(self.OID['df_FS_Index'], self.OID['df_FS_Name'] , volume)
+		if idx != None:
+			sn_idx = int(idx) + 1
+		else:
+			sn_idx = None
 
 		return (idx, sn_idx)
 
 
 	def check_vol_data(self, volume, warn, crit):
 		(idx, sn_idx) = self.common_vol_idx(volume)
+
+		if idx == None:
+			return self.remember_check('vol_data', self.RETURNCODE['UNKNOWN'], '"' + volume + '" not found!')
 
 		fs_total = long(self.SNMPGET(self.OID['df_FS_kBTotal'], idx)) * 1024L
 		fs_used = long(self.SNMPGET(self.OID['df_FS_kBUsed'], idx)) * 1024L
@@ -385,6 +391,9 @@ class CheckNAF(SNMPMonitoringPlugin):
 	def check_vol_snap(self, volume, warn, crit):
 		(idx, sn_idx) = self.common_vol_idx(volume)
 
+		if idx == None:
+			return self.remember_check('vol_snap', self.RETURNCODE['UNKNOWN'], '"' + volume + '" not found!')
+
 		# fs_total = long(self.SNMPGET(self.OID['df_FS_kBTotal'], idx)) * 1024L
 		# fs_used = long(self.SNMPGET(self.OID['df_FS_kBUsed'], idx)) * 1024L
 		# fs_avail = long(self.SNMPGET(self.OID['df_FS_kBAvail'], idx)) * 1024L
@@ -411,6 +420,9 @@ class CheckNAF(SNMPMonitoringPlugin):
 	def check_vol_inode(self, volume, warn, crit):
 		(idx, sn_idx) = self.common_vol_idx(volume)
 
+		if idx == None:
+			return self.remember_check('vol_inode', self.RETURNCODE['UNKNOWN'], '"' + volume + '" not found!')
+
 		in_used = long(self.SNMPGET(self.OID['df_FS_INodeUsed'] + '.' + idx))
 		in_free = long(self.SNMPGET(self.OID['df_FS_INodeFree'] + '.' + idx))
 		in_total = in_used + in_free
@@ -433,6 +445,9 @@ class CheckNAF(SNMPMonitoringPlugin):
 
 	def check_vol_files(self, volume, warn, crit):
 		(idx, sn_idx) = self.common_vol_idx(volume)
+
+		if idx == None:
+			return self.remember_check('vol_files', self.RETURNCODE['UNKNOWN'], '"' + volume + '" not found!')
 
 		fi_avail = long(self.SNMPGET(self.OID['df_FS_MaxFilesAvail'] + '.' + idx))
 		fi_used = long(self.SNMPGET(self.OID['df_FS_MaxFilesUsed'] + '.' + idx))

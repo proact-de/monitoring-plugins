@@ -450,7 +450,7 @@ class SNMPMonitoringPlugin(MonitoringPlugin):
 		else:
 			self.verbose(2, 'Nothing found!')
 
-		return str(index)
+		return index
 
 
 	def find_in_table(self, oid_index, oid_values, wanted):
@@ -463,7 +463,7 @@ class SNMPMonitoringPlugin(MonitoringPlugin):
 		if len(indexes) != len(values):
 			self.back2nagios(3, 'Different data from 2 SNMP Walks!')
 
-		return str(self.find_index_for_value(indexes, values, wanted))
+		return self.find_index_for_value(indexes, values, wanted)
 
 
 	def SNMPGET(self, baseoid, idx=None, exitonerror=True):
