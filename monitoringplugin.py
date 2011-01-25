@@ -227,9 +227,9 @@ class MonitoringPlugin(object):
 				self.add_multilineoutput(check.get('multilineoutput'))
 
 		statusline = []
-		for retcode in [2, 1, 3, 0]:
+		for retcode in self.returncode_priority:
 			if len(out[retcode]):
-				statusline.append(str(len(out[retcode])) + ' ' + self.RETURNSTRINGS[retcode] + ': ' + '/'.join(out[retcode]))
+				statusline.append(str(len(out[retcode])) + ' ' + self.RETURNSTRINGS[retcode] + ': ' + ' '.join(out[retcode]))
 		statusline = ', '.join(statusline)
 		self.add_output(statusline)
 
