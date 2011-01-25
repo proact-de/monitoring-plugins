@@ -478,6 +478,9 @@ class CheckNAF(SNMPMonitoringPlugin):
 def main():
 	plugin = CheckNAF(pluginname='check_naf', tagforstatusline='NAF', description=u'Monitoring NetApp™ FAS systems', version='0.9')
 
+	plugin.add_cmdlineoption('', '--separator', 'separator', 'Separator for check/target/warn/crit', metavar=',', default=',')
+	plugin.add_cmdlineoption('', '--subseparator', 'subseparator', 'Separator for multiple checks or targets', metavar='+', default='+')
+
 	plugin.add_cmdlineoption('', '--check', 'check', 'OBSOLETE - use new syntax!', default='')
 	plugin.add_cmdlineoption('', '--target', 'target', 'OBSOLETE - use new syntax!', default='')
 	plugin.add_cmdlineoption('-w', '', 'warn', 'OBSOLETE - use new syntax!', default='')
@@ -490,25 +493,25 @@ def main():
 		import sys
 		arguments = plugin.options.check
 		for s in [plugin.options.target, plugin.options.warn, plugin.options.crit]:
-			arguments += ':' + s
+			arguments += plugin.options.separator + s
 		plugin.back2nagios(3, 'Obsolete syntax - please use new syntax: "%s %s"' % (sys.argv[0], arguments))
 
 
 	checks = []
 
 	for quad in plugin.args:
-		quad = quad.split(':')
+		quad = quad.split(plugin.options.separator)
 		quad = (quad + ['', '', ''])[:4] # Fix length to 4, fill with ''
 
 		# Convert list of checks to list
-		if ',' in quad[0]:
-			quad[0] = quad[0].split(',')
+		if plugin.options.subseparator in quad[0]:
+			quad[0] = quad[0].split(plugin.options.subseparator)
 		else:
 			quad[0] = [quad[0],]
 
 		# Convert list of targets to list
-		if ',' in quad[1]:
-			quad[1] = quad[1].split(',')
+		if plugin.options.subseparator in quad[1]:
+			quad[1] = quad[1].split(plugin.options.subseparator)
 		else:
 			quad[1] = [quad[1],]
 
