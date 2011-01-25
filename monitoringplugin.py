@@ -488,7 +488,7 @@ class SNMPMonitoringPlugin(MonitoringPlugin):
 				return long(self.SNMPGET_wrapper(baseoid[0] + idx, exitonerror=exitonerror))
 
 		elif type(baseoid) in (str, ) and idx != None:
-			return self.SNMPGET_wrapper(baseoid + str(idx), exitonerror=exitonerror)
+			return self.SNMPGET_wrapper(baseoid + '.' + str(idx), exitonerror=exitonerror)
 		else:
 			return self.SNMPGET_wrapper(baseoid, exitonerror=exitonerror)
 
