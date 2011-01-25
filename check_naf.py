@@ -88,6 +88,25 @@ class CheckNAF(SNMPMonitoringPlugin):
 			'OPs_FCP': ['.1.3.6.1.4.1.789.1.17.25.0', '.1.3.6.1.4.1.789.1.17.14.0', '.1.3.6.1.4.1.789.1.17.13.0',],
 			'OPs_iSCSI': ['.1.3.6.1.4.1.789.1.17.24.0', '.1.3.6.1.4.1.789.1.17.12.0', '.1.3.6.1.4.1.789.1.17.11.0',],
 
+			'Snapmirror_On': '.1.3.6.1.4.1.789.1.9.1.0',
+			'Snapmirror_License': '.1.3.6.1.4.1.789.1.9.19.0',
+			'Snapmirror_Index': '.1.3.6.1.4.1.789.1.9.20.1.1',
+			'Snapmirror_Src': '.1.3.6.1.4.1.789.1.9.20.1.2',
+			'Snapmirror_Dst': '.1.3.6.1.4.1.789.1.9.20.1.3',
+			'Snapmirror_Status': '.1.3.6.1.4.1.789.1.9.20.1.4',
+			'Snapmirror_State': '.1.3.6.1.4.1.789.1.9.20.1.5',
+			'Snapmirror_Lag': '.1.3.6.1.4.1.789.1.9.20.1.6',
+
+			'Snapvault_On': '.1.3.6.1.4.1.789.1.19.1.0',
+			'Snapvault_LicensePrimary': '.1.3.6.1.4.1.789.1.19.9.0',
+			'Snapvault_LicenseSecondary': '.1.3.6.1.4.1.789.1.19.10.0',
+			'Snapvault_Index': '.1.3.6.1.4.1.789.1.19.11.1.1',
+			'Snapvault_Src': '.1.3.6.1.4.1.789.1.19.11.1.2',
+			'Snapvault_Dst': '.1.3.6.1.4.1.789.1.19.11.1.3',
+			'Snapvault_Status': '.1.3.6.1.4.1.789.1.19.11.1.4',
+			'Snapvault_State': '.1.3.6.1.4.1.789.1.19.11.1.5',
+			'Snapvault_Lag': '.1.3.6.1.4.1.789.1.19.11.1.6',
+
 			'Model': '.1.3.6.1.4.1.789.1.1.5.0',
 			'ONTAP_Version': '.1.3.6.1.4.1.789.1.1.2.0',
 
@@ -115,6 +134,8 @@ class CheckNAF(SNMPMonitoringPlugin):
 			'Cluster_State': ( (2,4,), (), (1,3,), ),
 			'Global_Status': ( (3,), (4,), (5,6), ),
 			'NVRAM_Status': ( (1,9), (2,5,8), (3,4,6), ),
+			'Snapmirror_State': ( (2,5,), (1,4,6,), (3,), ),
+			'Snapvault_State': ( (2,5,7,), (1,3,4,6,), (None,), ),
 			}
 
 	Status2String = {
@@ -126,6 +147,10 @@ class CheckNAF(SNMPMonitoringPlugin):
 			'NVRAM_Status' : { '1' : 'ok', '2' : 'partiallyDischarged', '3' : 'fullyDischarged', '4' : 'notPresent', '5' : 'nearEndOfLife', '6' : 'atEndOfLife', '7' : 'unknown', '8' : 'overCharged', '9' : 'fullyCharged', },
 			'df_FS_Status' : { '1' : 'unmounted', '2' : 'mounted', '3' : 'frozen', '4' : 'destroying', '5' : 'creating', '6' : 'mounting', '7' : 'unmounting', '8' : 'nofsinfo', '9' : 'replaying', '10': 'replayed', },
 			'df_FS_Type' : { '1' : 'traditionalVolume', '2' : 'flexibleVolume', '3' : 'aggregate', },
+			'Snapmirror_Status': { '1' : 'idle', '2' : 'transferring', '3' : 'pending', '4' : 'aborting', '5' : 'migrating', '6' : 'quiescing', '7' : 'resyncing', '8' : 'waiting', '9' : 'syncing', '10': 'in-sync', },
+			'Snapmirror_State': { '1' : 'uninitialized', '2' : 'snapmirrored', '3' : 'broken-off', '4' : 'quiesced', '5' : 'source', '6' : 'unknown', },
+			'Snapvault_Status': { '1' : 'idle', '2' : 'transferring', '3' : 'pending', '4' : 'aborting', '5' : 'unknown_5', '6' : 'quiescing', '7' : 'resyncing', '8' : 'unknown_8', '9' : 'unknown_9', '10': 'unknown_10', '11': 'unknown_11', '12': 'paused', },
+			'Snapvault_State': { '1' : 'uninitialized', '2' : 'snapvaulted', '3' : 'brokenOff', '4' : 'quiesced', '5' : 'source', '6' : 'unknown', '7' : 'restoring', },
 		}
 
 
@@ -368,6 +393,88 @@ class CheckNAF(SNMPMonitoringPlugin):
 		return self.remember_check('ops', returncode, output, perfdata=perfdata)
 
 
+	def check_snapmirror(self, target, warn, crit):
+		if self.SNMPGET(self.OID['Snapmirror_License']) != '2':
+			return self.remember_check('snapmirror', self.RETURNCODE['CRITICAL'], 'No license for SnapMirror')
+
+		if self.SNMPGET(self.OID['Snapmirror_On']) != '2':
+			return self.remember_check('snapmirror', self.RETURNCODE['CRITICAL'], 'SnapMirror is turned off!')
+
+		if not target:
+			return self.remember_check('snapmirror', self.RETURNCODE['OK'], 'SnapMirror is turned on!')
+
+		idx = self.find_in_table(self.OID['Snapmirror_Index'], self.OID['Snapmirror_Src'], target)
+		if idx == None:
+			idx = self.find_in_table(self.OID['Snapmirror_Index'], self.OID['Snapmirror_Dst'], target)
+
+		if idx == None:
+			return self.remember_check('snapmirror', self.RETURNCODE['UNKNOWN'], 'No snapmirror with source or destination "' + target + '" found!')
+
+		sm_src = self.SNMPGET(self.OID['Snapmirror_Src'], idx)
+		sm_dst = self.SNMPGET(self.OID['Snapmirror_Dst'], idx)
+		sm_status = int(self.SNMPGET(self.OID['Snapmirror_Status'], idx))
+		sm_state = int(self.SNMPGET(self.OID['Snapmirror_State'], idx))
+		sm_lag = long(self.SNMPGET(self.OID['Snapmirror_Lag'], idx)) / 100
+
+		rc_state = self.map_status_to_returncode(sm_state, self.OWC['Snapmirror_State'])
+		rc_lag = self.value_wc_to_returncode(sm_lag, warn, crit)
+
+		returncode = self.max_returncode([rc_state, rc_lag])
+
+		if rc_lag in [1,2]:
+			max_lag = [None, warn, crit][rc_lag]
+			output = 'Lag too high (%s > %s)! ' % (sm_lag, max_lag)
+		else:
+			output = ''
+
+		output += 'Source: "' + sm_src + '", Destination: "' + sm_dst + '", '
+		output += 'State: ' + self.Status2String['Snapmirror_State'].get(str(sm_state)) + ', '
+		output += 'Status: ' + self.Status2String['Snapmirror_Status'].get(str(sm_status))
+
+		return self.remember_check('snapmirror:' + target, returncode, output)
+
+
+	def check_snapvault(self, target, warn, crit):
+		if self.SNMPGET(self.OID['Snapvault_LicensePrimary']) != '2' and self.SNMPGET(self.OID['Snapvault_LicenseSecondary']) != '2':
+			return self.remember_check('snapvault', self.RETURNCODE['CRITICAL'], 'No license for SnapVault')
+
+		if self.SNMPGET(self.OID['Snapvault_On']) != '2':
+			return self.remember_check('snapvault', self.RETURNCODE['CRITICAL'], 'SnapVault is turned off!')
+
+		if not target:
+			return self.remember_check('snapvault', self.RETURNCODE['OK'], 'SnapVault is turned on!')
+
+		idx = self.find_in_table(self.OID['Snapvault_Index'], self.OID['Snapvault_Src'], target)
+		if idx == None:
+			idx = self.find_in_table(self.OID['Snapvault_Index'], self.OID['Snapvault_Dst'], target)
+
+		if idx == None:
+			return self.remember_check('snapvault', self.RETURNCODE['UNKNOWN'], 'No snapvault with source or destination "' + target + '" found!')
+
+		sv_src = self.SNMPGET(self.OID['Snapvault_Src'], idx)
+		sv_dst = self.SNMPGET(self.OID['Snapvault_Dst'], idx)
+		sv_status = int(self.SNMPGET(self.OID['Snapvault_Status'], idx))
+		sv_state = int(self.SNMPGET(self.OID['Snapvault_State'], idx))
+		sv_lag = long(self.SNMPGET(self.OID['Snapvault_Lag'], idx)) / 100
+
+		rc_state = self.map_status_to_returncode(sv_state, self.OWC['Snapvault_State'])
+		rc_lag = self.value_wc_to_returncode(sv_lag, warn, crit)
+
+		returncode = self.max_returncode([rc_state, rc_lag])
+
+		if rc_lag in [1,2]:
+			max_lag = [None, warn, crit][rc_lag]
+			output = 'Lag too high (%s > %s)! ' % (sv_lag, max_lag)
+		else:
+			output = ''
+
+		output += 'Source: "' + sv_src + '", Destination: "' + sv_dst + '", '
+		output += 'State: ' + self.Status2String['Snapvault_State'].get(str(sv_state)) + ', '
+		output += 'Status: ' + self.Status2String['Snapvault_Status'].get(str(sv_status))
+
+		return self.remember_check('snapvault:' + target, returncode, output)
+
+
 	def check_version(self):
 		model = self.SNMPGET(self.OID['Model'])
 		ontapversion = self.SNMPGET(self.OID['ONTAP_Version'])
@@ -580,6 +687,10 @@ def main():
 			result = plugin.check_nvram()
 		elif check == 'ops':
 			result = plugin.check_ops()
+		elif check == 'snapmirror':
+			result = plugin.check_snapmirror(target, warn=warn, crit=crit)
+		elif check == 'snapvault':
+			result = plugin.check_snapvault(target, warn=warn, crit=crit)
 		elif check == 'version':
 			result = plugin.check_version()
 		elif check == 'vol_data':
