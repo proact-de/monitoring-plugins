@@ -60,6 +60,15 @@ class CheckNAF(SNMPMonitoringPlugin):
 			'Global_Status': '.1.3.6.1.4.1.789.1.2.2.4.0',
 			'Global_Status_Message': '.1.3.6.1.4.1.789.1.2.2.25.0',
 
+			'Net_ifIndex': '.1.3.6.1.4.1.789.1.22.1.2.1.1',
+			'Net_ifDescr': '.1.3.6.1.4.1.789.1.22.1.2.1.2',
+			'Net_InBytes': ['.1.3.6.1.4.1.789.1.22.1.2.1.25', '.1.3.6.1.4.1.789.1.22.1.2.1.4', '.1.3.6.1.4.1.789.1.22.1.2.1.3',],
+			'Net_OutBytes': ['.1.3.6.1.4.1.789.1.22.1.2.1.31', '.1.3.6.1.4.1.789.1.22.1.2.1.16', '.1.3.6.1.4.1.789.1.22.1.2.1.15',],
+			'Net_InDiscards': ['.1.3.6.1.4.1.789.1.22.1.2.1.28', '.1.3.6.1.4.1.789.1.22.1.2.1.10', '.1.3.6.1.4.1.789.1.22.1.2.1.9',],
+			'Net_OutDiscards': ['.1.3.6.1.4.1.789.1.22.1.2.1.34', '.1.3.6.1.4.1.789.1.22.1.2.1.22', '.1.3.6.1.4.1.789.1.22.1.2.1.21',],
+			'Net_InErrors': ['.1.3.6.1.4.1.789.1.22.1.2.1.29', '.1.3.6.1.4.1.789.1.22.1.2.1.12', '.1.3.6.1.4.1.789.1.22.1.2.1.11',],
+			'Net_OutErrors': ['.1.3.6.1.4.1.789.1.22.1.2.1.35', '.1.3.6.1.4.1.789.1.22.1.2.1.24', '.1.3.6.1.4.1.789.1.22.1.2.1.23',],
+
 			'IO_DiskReadBy': ['.1.3.6.1.4.1.789.1.2.2.32.0', '.1.3.6.1.4.1.789.1.2.2.16.0', '.1.3.6.1.4.1.789.1.2.2.15.0',],
 			'IO_DiskWriteBy': ['.1.3.6.1.4.1.789.1.2.2.33.0', '.1.3.6.1.4.1.789.1.2.2.18.0', '.1.3.6.1.4.1.789.1.2.2.17.0',],
 			'IO_NetInBy': ['.1.3.6.1.4.1.789.1.2.2.30.0', '.1.3.6.1.4.1.789.1.2.2.12.0', '.1.3.6.1.4.1.789.1.2.2.11.0',],
@@ -274,6 +283,32 @@ class CheckNAF(SNMPMonitoringPlugin):
 		output = model + ': ' + globalstatusmsg
 
 		return self.remember_check('global', returncode, output)
+
+
+	def check_ifstat(self, nic):
+		idx = self.find_in_table(self.OID['Net_ifIndex'], self.OID['Net_ifDescr'] , nic)
+
+		if idx == None:
+			return self.remember_check('ifstat:'+nic, self.RETURNCODE['UNKNOWN'], 'NIC "' + nic + '" not found!')
+
+		n_bytes_in = self.SNMPGET(self.OID['Net_InBytes'], idx)
+		n_bytes_out = self.SNMPGET(self.OID['Net_OutBytes'], idx)
+		n_discards_in = self.SNMPGET(self.OID['Net_InDiscards'], idx)
+		n_discards_out = self.SNMPGET(self.OID['Net_OutDiscards'], idx)
+		n_errors_in = self.SNMPGET(self.OID['Net_InErrors'], idx)
+		n_errors_out = self.SNMPGET(self.OID['Net_OutErrors'], idx)
+
+		returncode = self.RETURNCODE['OK']
+		output = 'Network statistics for %s' % nic
+		perfdata = []
+		perfdata.append({'label':'naifbyin_'+nic, 'value':n_bytes_in, 'unit':'c'})
+		perfdata.append({'label':'naifbyout_'+nic, 'value':n_bytes_out, 'unit':'c'})
+		perfdata.append({'label':'naifdiscin_'+nic, 'value':n_discards_in, 'unit':'c'})
+		perfdata.append({'label':'naifdiscout_'+nic, 'value':n_discards_out, 'unit':'c'})
+		perfdata.append({'label':'naiferrin_'+nic, 'value':n_errors_in, 'unit':'c'})
+		perfdata.append({'label':'naiferrout_'+nic, 'value':n_errors_out, 'unit':'c'})
+
+		return self.remember_check('ifstat:'+nic, returncode, output, perfdata=perfdata)
 
 
 	def check_io(self):
@@ -537,6 +572,8 @@ def main():
 			result = plugin.check_extcache()
 		elif check == 'extcache_info':
 			result = plugin.check_extcache_info()
+		elif check == 'ifstat':
+			result = plugin.check_ifstat(target)
 		elif check == 'io':
 			result = plugin.check_io()
 		elif check == 'nvram':
