@@ -306,10 +306,16 @@ class MonitoringPlugin(object):
 			print 'V' + str(level) + ': ' + output
 
 
-	def exit(self):
-		for returncode in self.returncode_priority:
-			if returncode in self.__returncode:
+	def max_returncode(self, returncodes):
+		for rc in self.returncode_priority:
+			if rc in returncodes:
 				break
+
+		return rc
+
+
+	def exit(self):
+		returncode = self.max_returncode(self.__returncode)
 
 		self.back2nagios(returncode, statusline=self.__output, multiline=self.__multilineoutput, performancedata=self.__performancedata)
 
