@@ -44,12 +44,15 @@ searchpattern = re.compile(r'(\d+)\s+Sensor:\s*([0-9A-Za-z]+)\s+Raw:\s*(-?[0-9\.
 for sensorid in plugin.options.sensorid:
 	filename = os.path.join(plugin.options.path, '%s%s' % (plugin.options.basefilename, sensorid))
 	try:
-		plugin.verbose(3, 'Reading sensor %s' % sensorid)
-		data = file(filename).read().lstrip().rstrip()
+		plugin.verbose(2, 'Reading sensor %s' % sensorid)
+		data = file(filename).readlines()
 	except IOError:
 		plugin.back2nagios(3, 'Could not read file "%s"' % filename)
 
-	plugin.verbose(2, 'Read line: %s' % data)
+	if plugin.options.verbose >= 3:
+		plugin.verbose(3, 'Read line(s):' % data)
+		for line in data:
+			plugin.verbose(3, '--> ' + line.lstrip().rstrip())
 
 	plugin.verbose(2, 'Checking age of file')
 	fileage = time.time() - os.path.getmtime(filename)
@@ -60,40 +63,45 @@ for sensorid in plugin.options.sensorid:
 	else:
 		plugin.verbose(2, 'File age OK, age: %s and %s seconds are allowed'% (long(fileage), plugin.options.maxage))
 	
-		result = searchpattern.search(data)
-		if result:
-			sensor_type = None
-			(readtime, sid, raw, value, unit) = result.groups()
+		valuesinfile = 0
 
-			readtime = datetime.datetime.fromtimestamp(long(readtime))
-			readtime = readtime.isoformat(' ')
-
-			if unit in ['degC', '\xc2\xb0C']:
-				sensor_type = 'temp'
-				sensor_name = 'temp_' + str(sensorid)
-				warn = plugin.options.tempwarn
-				crit = plugin.options.tempcrit
-				unit = 'C'
-				pdunit = ''
-			elif unit == '%RH':
-				sensor_type = 'hum'
-				sensor_name = 'hum_' + str(sensorid)
-				warn = plugin.options.humwarn
-				crit = plugin.options.humcrit
-				pdunit = '%'
-
-			if sensor_type:
-				returncode = plugin.value_wc_to_returncode(float(value), warn, crit)
-				if returncode == 0:
-					plugin.add_output('%s: %s%s' % (sensor_name, value, unit))
+		for line in data:
+			result = searchpattern.search(line)
+			if result:
+				sensor_type = None
+				(readtime, sid, raw, value, unit) = result.groups()
+	
+				readtime = datetime.datetime.fromtimestamp(long(readtime))
+				readtime = readtime.isoformat(' ')
+	
+				if unit in ['degC', '\xc2\xb0C']:
+					sensor_type = 'temp'
+					sensor_name = 'temp_' + str(sensorid)
+					warn = plugin.options.tempwarn
+					crit = plugin.options.tempcrit
+					unit = 'C'
+					pdunit = ''
+				elif unit == '%RH':
+					sensor_type = 'hum'
+					sensor_name = 'hum_' + str(sensorid)
+					warn = plugin.options.humwarn
+					crit = plugin.options.humcrit
+					pdunit = '%'
+	
+				if sensor_type:
+					valuesinfile += 1
+					returncode = plugin.value_wc_to_returncode(float(value), warn, crit)
+					if returncode == 0:
+						plugin.add_output('%s: %s%s' % (sensor_name, value, unit))
+					else:
+						plugin.add_output('%s: %s %s%s' % (sensor_name, plugin.RETURNSTRINGS[returncode], value, unit))
+					plugin.add_returncode(returncode)
+					plugin.add_multilineoutput('%s %s: %s%s (%s)' % (sensor_name, plugin.RETURNSTRINGS[returncode], value, unit, readtime))
+					plugin.format_add_performancedata(sensor_name, value, pdunit, warn=warn, crit=crit)
 				else:
-					plugin.add_output('%s: %s %s%s' % (sensor_name, plugin.RETURNSTRINGS[returncode], value, unit))
-				plugin.add_returncode(returncode)
-				plugin.add_multilineoutput('%s %s: %s%s (%s)' % (sensor_name, plugin.RETURNSTRINGS[returncode], value, unit, readtime))
-				plugin.format_add_performancedata(sensor_name, value, pdunit, warn=warn, crit=crit)
-			else:
-				plugin.verbose(1, 'Unknown sensor type "%s" on %s' % (unit, sensorid))
-		else:
+					plugin.verbose(1, 'Unknown sensor type "%s" on %s' % (unit, sensorid))
+
+		if valuesinfile == 0:
 			plugin.verbose(2, 'No data found for sensor %s' % sensorid)
 
 plugin.exit()
