@@ -13,6 +13,7 @@ plugin = MonitoringPlugin(pluginname='check_tl500', tagforstatusline='TL500', de
 plugin.add_cmdlineoption('-s', '', 'sensorid', '(comma separated list of) sensor id(s), no spaces', default=None)
 plugin.add_cmdlineoption('-m', '', 'maxage', 'maximum age of data files (default: 600 seconds/10 minutes)', type="int", default=600)
 plugin.add_cmdlineoption('-p', '', 'path', 'path to data files', default='/tmp')
+plugin.add_cmdlineoption('-b', '', 'basefilename', 'base of sensor file name', default='sensor_')
 plugin.add_cmdlineoption('-w', '', 'tempwarn', 'warning thresold for temperature sensors', default=None)
 plugin.add_cmdlineoption('-c', '', 'tempcrit', 'critical thresold for temperature sensors', default=None)
 plugin.add_cmdlineoption('-W', '', 'humwarn', 'warning thresold for humidity sensors', default=None)
@@ -43,7 +44,7 @@ plugin.verbose(1, 'Sensor id(s): ' + ' - '.join([str(s) for s in plugin.options.
 searchpattern = re.compile(r'Sensor:\s*([0-9A-Za-z]+)\s+Raw:\s*(-?[0-9\.]+)?\s+Value:\s*(-?[0-9\.]+)\s+Unit:\s*(\S+)$')
 
 for sensorid in plugin.options.sensorid:
-	filename = os.path.join(plugin.options.path, 'tl-500_%s' % sensorid)
+	filename = os.path.join(plugin.options.path, '%s%s' % (plugin.options.basefilename, sensorid))
 	try:
 		plugin.verbose(3, 'Reading sensor %s' % sensorid)
 		data = file(filename).read().lstrip().rstrip()
