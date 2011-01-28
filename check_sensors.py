@@ -8,7 +8,7 @@ import time
 import os
 import re
 
-plugin = MonitoringPlugin(pluginname='check_tl500', tagforstatusline='TL500', description='Check TL500 environment sensors', version='0.1')
+plugin = MonitoringPlugin(pluginname='check_sensors', tagforstatusline='Sensors', description='Check environment sensors', version='0.2')
 
 plugin.add_cmdlineoption('-s', '', 'sensorid', '(comma separated list of) sensor id(s), no spaces', default=None)
 plugin.add_cmdlineoption('-m', '', 'maxage', 'maximum age of data files (default: 600 seconds/10 minutes)', type="int", default=600)
@@ -31,14 +31,12 @@ if ',' in plugin.options.sensorid:
 else:
 	plugin.options.sensorid = [plugin.options.sensorid,]
 
-# Convert all sensor ids to long
-for idx in xrange(len(plugin.options.sensorid)):
-	try:
-		plugin.options.sensorid[idx] = long(plugin.options.sensorid[idx])
-	except ValueError:
-		plugin.back2nagios(3, 'Sensor id "%s" must be numeric!' % plugin.options.sensorid[idx])
+# Check all sensor ids are hex
+re_hex = re.compile('^[0-9A-Fa-f]+$')
+for sid in plugin.options.sensorid:
+	if not re_hex.search(sid):
+		plugin.back2nagios(3, 'Sensor id "%s" must be integer or hex!' % sid)
 
-plugin.options.sensorid.sort()
 plugin.verbose(1, 'Sensor id(s): ' + ' - '.join([str(s) for s in plugin.options.sensorid]))
 
 searchpattern = re.compile(r'(\d+)\s+Sensor:\s*([0-9A-Za-z]+)\s+Raw:\s*(-?[0-9\.]+)?\s+Value:\s*(-?[0-9\.]+)\s+Unit:\s*(\S+)\b')
