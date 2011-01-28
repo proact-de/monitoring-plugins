@@ -368,9 +368,9 @@ class SNMPMonitoringPlugin(MonitoringPlugin):
 		MonitoringPlugin.__init__(self, *args, **kwargs)
 
 		self.add_cmdlineoption('-H', '', 'host', 'Host to check', default='127.0.0.1')
-		self.add_cmdlineoption('-P', '', 'snmpversion', 'SNMP protocol version', default='1')
-		self.add_cmdlineoption('-C', '', 'snmpauth', 'SNMP v1/v2c community OR SNMP v3 quadruple', default='public')
-		self.add_cmdlineoption('', '--snmpcmdlinepath', 'snmpcmdlinepath', 'Path to "snmpget" and "snmpwalk"', default='/usr/bin')
+		self.add_cmdlineoption('-P', '', 'snmpversion', 'SNMP protocol version', metavar='1', default='1')
+		self.add_cmdlineoption('-C', '', 'snmpauth', 'SNMP v1/v2c community OR SNMP v3 quadruple', metavar='public', default='public')
+		self.add_cmdlineoption('', '--snmpcmdlinepath', 'snmpcmdlinepath', 'Path to "snmpget" and "snmpwalk"', metavar='/usr/bin/', default='/usr/bin')
 		# FIXME
 		self.add_cmdlineoption('', '--nonetsnmp', 'nonetsnmp', 'Do not use NET-SNMP python bindings', action='store_true')
 		# self.__optparser.add_option('', '--nonetsnmp', dest='nonetsnmp',  help='Do not use NET-SNMP python bindings', action='store_true')
