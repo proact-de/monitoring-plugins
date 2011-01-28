@@ -3,6 +3,7 @@
 
 from monitoringplugin import MonitoringPlugin
 
+import datetime
 import time
 import os
 import re
@@ -39,7 +40,7 @@ for idx in xrange(len(plugin.options.sensorid)):
 plugin.options.sensorid.sort()
 plugin.verbose(1, 'Sensor id(s): ' + ' - '.join([str(s) for s in plugin.options.sensorid]))
 
-searchpattern = re.compile(r'(....-..-.. ..:..:..)\s+Sensor:\s*([0-9]+)\s+Raw:\s*(-?[0-9]+)\s+Value:\s*(-?[0-9\.]+)\s+Unit:\s*(...?)$')
+searchpattern = re.compile(r'Sensor:\s*([0-9A-Za-z]+)\s+Raw:\s*(-?[0-9\.]+)?\s+Value:\s*(-?[0-9\.]+)\s+Unit:\s*(\S+)$')
 
 for sensorid in plugin.options.sensorid:
 	filename = os.path.join(plugin.options.path, 'tl-500_%s' % sensorid)
@@ -52,7 +53,8 @@ for sensorid in plugin.options.sensorid:
 	plugin.verbose(2, 'Read line: %s' % data)
 
 	plugin.verbose(2, 'Checking age of file')
-	fileage = time.time() - os.path.getmtime(filename)
+	readtime = os.path.getmtime(filename)
+	fileage = time.time() - readtime
 	if fileage > plugin.options.maxage:
 		plugin.add_output('Data of sensor "%s" to old' % sensorid)
 		plugin.add_returncode(3)
@@ -63,7 +65,10 @@ for sensorid in plugin.options.sensorid:
 		result = searchpattern.search(data)
 		if result:
 			sensor_type = None
-			(readtime, sid, raw, value, unit) = result.groups()
+			(sid, raw, value, unit) = result.groups()
+
+			readtime = datetime.datetime.fromtimestamp(long(readtime))
+			readtime = readtime.isoformat(' ')
 
 			if unit == '\xc2\xb0C':
 				sensor_type = 'temp'
