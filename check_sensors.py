@@ -41,7 +41,7 @@ for idx in xrange(len(plugin.options.sensorid)):
 plugin.options.sensorid.sort()
 plugin.verbose(1, 'Sensor id(s): ' + ' - '.join([str(s) for s in plugin.options.sensorid]))
 
-searchpattern = re.compile(r'Sensor:\s*([0-9A-Za-z]+)\s+Raw:\s*(-?[0-9\.]+)?\s+Value:\s*(-?[0-9\.]+)\s+Unit:\s*(\S+)$')
+searchpattern = re.compile(r'(\d+)\s+Sensor:\s*([0-9A-Za-z]+)\s+Raw:\s*(-?[0-9\.]+)?\s+Value:\s*(-?[0-9\.]+)\s+Unit:\s*(\S+)\b')
 
 for sensorid in plugin.options.sensorid:
 	filename = os.path.join(plugin.options.path, '%s%s' % (plugin.options.basefilename, sensorid))
@@ -54,8 +54,7 @@ for sensorid in plugin.options.sensorid:
 	plugin.verbose(2, 'Read line: %s' % data)
 
 	plugin.verbose(2, 'Checking age of file')
-	readtime = os.path.getmtime(filename)
-	fileage = time.time() - readtime
+	fileage = time.time() - os.path.getmtime(filename)
 	if fileage > plugin.options.maxage:
 		plugin.add_output('Data of sensor "%s" to old' % sensorid)
 		plugin.add_returncode(3)
@@ -66,12 +65,12 @@ for sensorid in plugin.options.sensorid:
 		result = searchpattern.search(data)
 		if result:
 			sensor_type = None
-			(sid, raw, value, unit) = result.groups()
+			(readtime, sid, raw, value, unit) = result.groups()
 
 			readtime = datetime.datetime.fromtimestamp(long(readtime))
 			readtime = readtime.isoformat(' ')
 
-			if unit == '\xc2\xb0C':
+			if unit in ['degC', '\xc2\xb0C']:
 				sensor_type = 'temp'
 				sensor_name = 'temp_' + str(sensorid)
 				warn = plugin.options.tempwarn
