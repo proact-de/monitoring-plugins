@@ -596,7 +596,7 @@ class SNMPMonitoringPlugin(MonitoringPlugin):
 		for line in range(0,len(out)):
 			out[line] = out[line].rstrip().replace('"','')
 
-		self.verbose(1, out)
+		self.verbose(1, str(out))
 		return out
 
 
