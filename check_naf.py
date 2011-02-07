@@ -21,6 +21,8 @@
 # along with check_naf. If not, see <http://www.gnu.org/licenses/>. #
 #####################################################################
 
+import sys
+
 from monitoringplugin import SNMPMonitoringPlugin
 
 class CheckNAF(SNMPMonitoringPlugin):
@@ -627,12 +629,32 @@ def main():
 	plugin.add_cmdlineoption('', '--target', 'target', 'OBSOLETE - use new syntax!', default='')
 	plugin.add_cmdlineoption('-w', '', 'warn', 'OBSOLETE - use new syntax!', default='')
 	plugin.add_cmdlineoption('-c', '', 'crit', 'OBSOLETE - use new syntax!', default='')
+
+	plugin.add_cmdlineoption('', '--snmpwalk', 'snmpwalkoid', 'DEBUG: "list" OIDs or SNMPWALK it', default=None)
+
 	plugin.parse_cmdlineoptions()
 
 	plugin.prepare_snmp()
 
+	if plugin.options.snmpwalkoid != None:
+		if not plugin.options.snmpwalkoid in plugin.OID:
+			print 'List of OIDs:'
+			oids = plugin.OID.keys()
+			oids.sort()
+			for key in oids:
+				print '- %s' % key
+			sys.exit(0)
+
+		print 'Walking "%s"...' % plugin.options.snmpwalkoid
+		result = plugin.SNMPWALK(plugin.OID[plugin.options.snmpwalkoid], exitonerror=False)
+		if result == None:
+			result = plugin.SNMPGET(plugin.OID[plugin.options.snmpwalkoid], exitonerror=False)
+		for value in result:
+			print '=> %s' % value
+		sys.exit(0)
+
+
 	if plugin.options.check or plugin.options.target:
-		import sys
 		arguments = plugin.options.check
 		for s in [plugin.options.target, plugin.options.warn, plugin.options.crit]:
 			arguments += plugin.options.separator + s
