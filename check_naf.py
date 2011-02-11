@@ -553,10 +553,14 @@ class CheckNAF(SNMPMonitoringPlugin):
 		sn_used = long(self.SNMPGET(self.OID['df_FS_kBUsed'], sn_idx)) * 1024L
 		# sn_avail = long(self.SNMPGET(self.OID['df_FS_kBAvail'], sn_idx)) * 1024L
 
-		sn_pctused = float(sn_used) / float(sn_total) * 100.0
-
 		warn = self.range_dehumanize(warn, sn_total)
 		crit = self.range_dehumanize(crit, sn_total)
+		if sn_total != 0:
+			# Snap reserve
+			sn_pctused = float(sn_used) / float(sn_total) * 100.0
+		else:
+			# No snap reserve
+			sn_pctused = 0.0
 
 		returncode = self.value_wc_to_returncode(sn_used, warn, crit)
 		output = volume + '.snapshot: Used ' + self.value_to_human_binary(sn_used, 'B')
