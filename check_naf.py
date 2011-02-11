@@ -497,6 +497,14 @@ class CheckNAF(SNMPMonitoringPlugin):
 		return (idx, sn_idx)
 
 
+	def common_vol_shorten_target(self, target):
+		target = target.replace('/vol/', '')
+		if target[-1] == "/":
+			target = target[:-1]
+
+		return target
+
+
 	def check_vol_data(self, volume, warn, crit):
 		(idx, sn_idx) = self.common_vol_idx(volume)
 
@@ -522,7 +530,7 @@ class CheckNAF(SNMPMonitoringPlugin):
 		returncode = self.value_wc_to_returncode(fs_used, warn, crit)
 		output = volume + ': Used ' + self.value_to_human_binary(fs_used, 'B')
 		output += ' (' + '%3.1f' % fs_pctused + '%)'+ ' out of ' + self.value_to_human_binary(fs_total, 'B')
-		target = volume.replace('/vol/', '')[:-1]
+		target = self.common_vol_shorten_target(volume)
 		perfdata = []
 		perfdata.append({'label':'navdu_' + target, 'value':fs_used, 'unit':'B', 'warn':warn, 'crit':crit, 'min':0})
 		perfdata.append({'label':'navdt_' + target, 'value':fs_total, 'unit':'B'})
@@ -553,7 +561,7 @@ class CheckNAF(SNMPMonitoringPlugin):
 		returncode = self.value_wc_to_returncode(sn_used, warn, crit)
 		output = volume + '.snapshot: Used ' + self.value_to_human_binary(sn_used, 'B')
 		output += ' (' + '%3.1f' % sn_pctused + '%)'+ ' out of ' + self.value_to_human_binary(sn_total, 'B')
-		target = volume.replace('/vol/', '')[:-1]
+		target = self.common_vol_shorten_target(volume)
 		perfdata = []
 		perfdata.append({'label':'navsu_' + target, 'value':sn_used, 'unit':'B', 'warn':warn, 'crit':crit, 'min':0})
 		perfdata.append({'label':'navst_' + target, 'value':sn_total, 'unit':'B'})
@@ -579,7 +587,7 @@ class CheckNAF(SNMPMonitoringPlugin):
 		returncode = self.value_wc_to_returncode(in_used, warn, crit)
 		output = volume + ': Used inodes ' + self.value_to_human_si(in_used)
 		output += ' (' + '%3.1f' % in_pctused + '%)'+ ' out of ' + self.value_to_human_si(in_total)
-		target = volume.replace('/vol/', '')[:-1]
+		target = self.common_vol_shorten_target(volume)
 		perfdata = []
 		perfdata.append({'label':'naviu_' + target, 'value':in_used, 'unit':None, 'warn':warn, 'crit':crit, 'min':0})
 		perfdata.append({'label':'navit_' + target, 'value':in_total, 'unit':None})
@@ -607,7 +615,7 @@ class CheckNAF(SNMPMonitoringPlugin):
 		output = volume + ': Used files ' + self.value_to_human_si(fi_used)
 		output += ' (' + '%3.1f' % fi_pctused + '%)'+ ' out of ' + self.value_to_human_si(fi_total)
 		output += ', may raised to ' + self.value_to_human_si(fi_possible)
-		target = volume.replace('/vol/', '')[:-1]
+		target = self.common_vol_shorten_target(volume)
 		perfdata = []
 		perfdata.append({'label':'navfu_' + target, 'value':fi_used, 'unit':None, 'warn':warn, 'crit':crit, 'min':0})
 		perfdata.append({'label':'navft_' + target, 'value':fi_total, 'unit':None})
