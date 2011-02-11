@@ -1,3 +1,5 @@
+# -*- encoding: utf-8 -*-
+
 __version__ = '0.0.100802'
 __all__ = ['MonitoringPlugin', 'SNMPMonitoringPlugin']
 
@@ -288,10 +290,10 @@ class MonitoringPlugin(object):
 				range = range[1:]
 
 			parts = range.split(':')
-			newrange += str(self.human_to_number(parts[0], total))
+			newrange += ('%f' % self.human_to_number(parts[0], total)).rstrip('0').rstrip('.')
 			
 			if len(parts) > 1:
-				newrange += ':' + str(self.human_to_number(parts[1], total))
+				newrange += ':' + ('%f' % self.human_to_number(parts[1], total)).rstrip('0').rstrip('.')
 
 			if range != newrange:
 				self.verbose(3, 'Changed range/thresold from "' + range + '" to "' + newrange + '"')
