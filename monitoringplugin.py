@@ -272,7 +272,10 @@ class MonitoringPlugin(object):
 			if total:
 				return float(value[:-1])/100.0 * float(total)
 			else:
-				return float(value[:-1])
+				if total in [0, 0.0]:
+					return 0.0
+				else:
+					return float(value[:-1]) # FIXME: Good idea?
 		elif value[-1].lower() in self.powers_si_lower:
 			return 1000.0 ** self.powers_si_lower.index(value[-1].lower()) * float(value[:-1])
 		elif value[-2:].lower() in self.powers_binary_lower:
