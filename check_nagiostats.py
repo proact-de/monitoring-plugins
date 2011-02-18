@@ -55,40 +55,40 @@ VARs = {
 	'NUMHSTPSVCHK60M': { 'type':long, 'unit':'', },
 	'NUMSVCACTCHK60M': { 'type':long, 'unit':'', },
 	'NUMSVCPSVCHK60M': { 'type':long, 'unit':'', },
-	'AVGACTSVCLAT': { 'type':float, 'unit':'s', 'factor':0.1, },
-	'AVGACTSVCEXT': { 'type':float, 'unit':'s', 'factor':0.1, },
+	'AVGACTSVCLAT': { 'type':float, 'unit':'s', 'factor':0.001, },
+	'AVGACTSVCEXT': { 'type':float, 'unit':'s', 'factor':0.001, },
 	'AVGACTSVCPSC': { 'type':float, 'unit':'%', },
-	'AVGPSVSVCLAT': { 'type':float, 'unit':'s', 'factor':0.1, },
+	'AVGPSVSVCLAT': { 'type':float, 'unit':'s', 'factor':0.001, },
 	'AVGPSVSVCPSC': { 'type':float, 'unit':'%', },
 	'AVGSVCPSC': { 'type':float, 'unit':'%', },
-	'AVGACTHSTLAT': { 'type':float, 'unit':'s', 'factor':0.1, },
-	'AVGACTHSTEXT': { 'type':float, 'unit':'s', 'factor':0.1, },
+	'AVGACTHSTLAT': { 'type':float, 'unit':'s', 'factor':0.001, },
+	'AVGACTHSTEXT': { 'type':float, 'unit':'s', 'factor':0.001, },
 	'AVGACTHSTPSC': { 'type':float, 'unit':'%', },
-	'AVGPSVHSTLAT': { 'type':float, 'unit':'s', 'factor':0.1, },
+	'AVGPSVHSTLAT': { 'type':float, 'unit':'s', 'factor':0.001, },
 	'AVGPSVHSTPSC': { 'type':float, 'unit':'%', },
 	'AVGHSTPSC': { 'type':float, 'unit':'%', },
-	'MINACTSVCLAT': { 'type':float, 'unit':'s', 'factor':0.1, },
-	'MINACTSVCEXT': { 'type':float, 'unit':'s', 'factor':0.1, },
+	'MINACTSVCLAT': { 'type':float, 'unit':'s', 'factor':0.001, },
+	'MINACTSVCEXT': { 'type':float, 'unit':'s', 'factor':0.001, },
 	'MINACTSVCPSC': { 'type':float, 'unit':'%', },
-	'MINPSVSVCLAT': { 'type':float, 'unit':'s', 'factor':0.1, },
+	'MINPSVSVCLAT': { 'type':float, 'unit':'s', 'factor':0.001, },
 	'MINPSVSVCPSC': { 'type':float, 'unit':'%', },
 	'MINSVCPSC': { 'type':float, 'unit':'%', },
-	'MINACTHSTLAT': { 'type':float, 'unit':'s', 'factor':0.1, },
-	'MINACTHSTEXT': { 'type':float, 'unit':'s', 'factor':0.1, },
+	'MINACTHSTLAT': { 'type':float, 'unit':'s', 'factor':0.001, },
+	'MINACTHSTEXT': { 'type':float, 'unit':'s', 'factor':0.001, },
 	'MINACTHSTPSC': { 'type':float, 'unit':'%', },
-	'MINPSVHSTLAT': { 'type':float, 'unit':'s', 'factor':0.1, },
+	'MINPSVHSTLAT': { 'type':float, 'unit':'s', 'factor':0.001, },
 	'MINPSVHSTPSC': { 'type':float, 'unit':'%', },
 	'MINHSTPSC': { 'type':float, 'unit':'%', },
-	'MAXACTSVCLAT': { 'type':float, 'unit':'s', 'factor':0.1, },
-	'MAXACTSVCEXT': { 'type':float, 'unit':'s', 'factor':0.1, },
+	'MAXACTSVCLAT': { 'type':float, 'unit':'s', 'factor':0.001, },
+	'MAXACTSVCEXT': { 'type':float, 'unit':'s', 'factor':0.001, },
 	'MAXACTSVCPSC': { 'type':float, 'unit':'%', },
-	'MAXPSVSVCLAT': { 'type':float, 'unit':'s', 'factor':0.1, },
+	'MAXPSVSVCLAT': { 'type':float, 'unit':'s', 'factor':0.001, },
 	'MAXPSVSVCPSC': { 'type':float, 'unit':'%', },
 	'MAXSVCPSC': { 'type':float, 'unit':'%', },
-	'MAXACTHSTLAT': { 'type':float, 'unit':'s', 'factor':0.1, },
-	'MAXACTHSTEXT': { 'type':float, 'unit':'s', 'factor':0.1, },
+	'MAXACTHSTLAT': { 'type':float, 'unit':'s', 'factor':0.001, },
+	'MAXACTHSTEXT': { 'type':float, 'unit':'s', 'factor':0.001, },
 	'MAXACTHSTPSC': { 'type':float, 'unit':'%', },
-	'MAXPSVHSTLAT': { 'type':float, 'unit':'s', 'factor':0.1, },
+	'MAXPSVHSTLAT': { 'type':float, 'unit':'s', 'factor':0.001, },
 	'MAXPSVHSTPSC': { 'type':float, 'unit':'%', },
 	'MAXHSTPSC': { 'type':float, 'unit':'%', },
 	'NUMACTHSTCHECKS1M': { 'type':long, 'unit':'', },
@@ -130,19 +130,6 @@ VARs = {
 	'NUMSACTSVCCHECKS15M': { 'type':long, 'unit':'', },
 	'NUMPSVSVCCHECKS15M': { 'type':long, 'unit':'', },
 	'NUMEXTCMDS15M': { 'type':long, 'unit':'', },
-	'NUMACTHSTCHECKS60M': { 'type':long, 'unit':'', },
-	'NUMOACTHSTCHECKS60M': { 'type':long, 'unit':'', },
-	'NUMCACHEDHSTCHECKS60M': { 'type':long, 'unit':'', },
-	'NUMSACTHSTCHECKS60M': { 'type':long, 'unit':'', },
-	'NUMPARHSTCHECKS60M': { 'type':long, 'unit':'', },
-	'NUMSERHSTCHECKS60M': { 'type':long, 'unit':'', },
-	'NUMPSVHSTCHECKS60M': { 'type':long, 'unit':'', },
-	'NUMACTSVCCHECKS60M': { 'type':long, 'unit':'', },
-	'NUMOACTSVCCHECKS60M': { 'type':long, 'unit':'', },
-	'NUMCACHEDSVCCHECKS60M': { 'type':long, 'unit':'', },
-	'NUMSACTSVCCHECKS60M': { 'type':long, 'unit':'', },
-	'NUMPSVSVCCHECKS60M': { 'type':long, 'unit':'', },
-	'NUMEXTCMDS60M': { 'type':long, 'unit':'', },
 	}
 
 plugin.add_cmdlineoption('-C', '', 'checks', 'Use built-in checks (predefined lists of variables)', default='')
@@ -155,9 +142,12 @@ plugin.parse_cmdlineoptions()
 
 
 if not plugin.options.nagiostats:
+	plugin.verbose(2, 'Auto-detecting path to "nagiostats"...')
 	for nagiostats in NAGIOSTATSs:
 		if os.path.exists(nagiostats):
 			plugin.options.nagiostats = nagiostats
+			plugin.verbose(2, 'Found it at "%s"' % nagiostats)
+			break
 
 if not os.path.exists(plugin.options.nagiostats):
 	plugin.back2nagios(3, 'Could not find "nagiostats"')
@@ -168,31 +158,42 @@ if not plugin.options.checks and not plugin.options.vars:
 # FIXME: Built var list out of -C
 
 if ',' in plugin.options.vars:
+	plugin.verbose(2, 'Multiple variables detected')
 	plugin.options.vars = plugin.options.vars.split(',')
 else:
+	plugin.verbose(2, 'Single variable detected')
 	plugin.options.vars = [plugin.options.vars, ]
 
 for var in plugin.options.vars:
+	plugin.verbose(3, 'See if "%s" is a valid variable' % var)
 	if var not in VARs:
 		plugin.back2nagios(3, 'Unknown variable "%s"' % var)
 
 if ',' in plugin.options.warn:
+	plugin.verbose(2, 'Multiple warning thresolds detected')
 	plugin.options.warn = plugin.options.warn.split(',')
 else:
+	plugin.verbose(2, 'Single warning thresold detected - use for all variables')
 	plugin.options.warn = [plugin.options.warn, ] * len(plugin.options.vars)
 
 if ',' in plugin.options.crit:
+	plugin.verbose(2, 'Multiple critical thresolds detected')
 	plugin.options.crit = plugin.options.crit.split(',')
 else:
+	plugin.verbose(2, 'Single critical thresold detected - use for all variables')
 	plugin.options.crit = [plugin.options.crit, ] * len(plugin.options.vars)
 
 
+plugin.verbose(3, 'Length of vars:  %s' % len(plugin.options.vars) )
+plugin.verbose(3, 'Length of warns: %s' % len(plugin.options.warn) )
+plugin.verbose(3, 'Length of crits: %s' % len(plugin.options.crit) )
 if not ( len(plugin.options.vars) == len(plugin.options.warn) == len(plugin.options.crit) ):
 	plugin.back2nagios(3, 'Different length of -V, -w and -c')
 
 
 # Go!
 cmdline = '%s -m -d %s' % (plugin.options.nagiostats, ','.join(plugin.options.vars))
+plugin.verbose(1, 'Using command line: %s' % cmdline)
 cmdline = shlex.split(cmdline)
 try:
 	cmd = subprocess.Popen(cmdline, stdout=subprocess.PIPE)
@@ -201,10 +202,17 @@ try:
 except OSError:
 	plugin.back2nagios(3, 'Could not execute "%s"' % cmdline)
 
-import pprint
-pprint.pprint(plugin.options.vars)
-pprint.pprint(outputs)
+plugin.verbose(3, 'Returncode of "nagiostats": %s' % retcode)
+if retcode == 254:
+	plugin.back2nagios(2, 'Could not read "status.dat"')
+elif retcode != 0:
+	plugin.back2nagios(3, 'Unknown return code "%s" - please send output of "-vvv" command line to author!' % retcode)
 
+plugin.verbose(1, 'Asked for variable(s): %s' % ' '.join(plugin.options.vars) )
+plugin.verbose(1, 'Got response(s): %s' % ' '.join(outputs) )
+
+plugin.verbose(3, 'Length of vars:    %s' % len(outputs) )
+plugin.verbose(3, 'Length of output:  %s' % len(plugin.options.vars) )
 if len(outputs) != len(plugin.options.vars):
 	plugin.back2nagios(3, 'Did not get expected infos')
 
@@ -221,7 +229,7 @@ for idx in xrange(0, len(plugin.options.vars)):
 
 		returncode = plugin.value_wc_to_returncode(output, warn, crit)
 	else:
-		returncode = plugin.RETURNCODES['OK']
+		returncode = plugin.RETURNCODE['OK']
 
 	perfdata = []
 	if VARs[var].get('unit') != None:
