@@ -76,7 +76,7 @@ returncode = plugin.value_wc_to_returncode(count, plugin.options.warn, plugin.op
 plugin.add_returncode(returncode)
 
 plugin.add_output('%s network connections on port %s' % (count, plugin.options.port))
-plugin.format_add_performancedata('netconnections', count, '', warn=plugin.options.warn, crit=plugin.options.crit)
+plugin.format_add_performancedata('netconns_%s' % plugin.options.port, count, '', warn=plugin.options.warn, crit=plugin.options.crit)
 
 plugin.exit()
 
