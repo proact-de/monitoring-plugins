@@ -167,10 +167,10 @@ while( count($this->DS) > 0 ) {
 		$def[$graphs] .= rrd::def     ("ior", $io1['RRDFILE'], $io1['DS'], "AVERAGE");
 		$def[$graphs] .= rrd::def     ("iow", $io2['RRDFILE'], $io2['DS'], "AVERAGE");
 		
-		$def[$graphs] .= rrd::area    ("ior", "#00FF00", "FIXME In/Read\:   ");
+		$def[$graphs] .= rrd::area    ("ior", "#00FF00", $desc_r . "\: ");
 		$def[$graphs] .= rrd::gprint  ("ior", array("LAST","MAX","AVERAGE"), "%7.2lf %SB/s");
 
-		$def[$graphs] .= rrd::line2   ("iow", "#0000FF", "FIXME Out/Write\: ");
+		$def[$graphs] .= rrd::line2   ("iow", "#0000FF", $desc_w . "\: ");
 		$def[$graphs] .= rrd::gprint  ("iow", array("LAST","MAX","AVERAGE"), "%7.2lf %SB/s");
 
 
@@ -193,16 +193,16 @@ while( count($this->DS) > 0 ) {
 		$def[$graphs] .= rrd::def     ("fcp",   $o_fcp['RRDFILE'],   $o_fcp['DS'], "AVERAGE");
 		$def[$graphs] .= rrd::def     ("iscsi", $o_iscsi['RRDFILE'], $o_iscsi['DS'], "AVERAGE");
 
-		$def[$graphs] .= rrd::line1   ("nfs", "#000000", "NFS ops/s\:   ");
+		$def[$graphs] .= rrd::line1   ("nfs", "#000000", "NFS   ops/s\: ");
 		$def[$graphs] .= rrd::gprint  ("nfs", array("LAST","MAX","AVERAGE"), "%7.2lf%Sops/s");
 
-		$def[$graphs] .= rrd::line1   ("cifs", "#00FFFF", "CIFS ops/s\:  ");
+		$def[$graphs] .= rrd::line1   ("cifs", "#00FFFF", "CIFS  ops/s\: ");
 		$def[$graphs] .= rrd::gprint  ("cifs", array("LAST","MAX","AVERAGE"), "%7.2lf%Sops/s");
 
-		$def[$graphs] .= rrd::line1   ("http", "#7F0000", "HTTP ops/s\:  ");
+		$def[$graphs] .= rrd::line1   ("http", "#7F0000", "HTTP  ops/s\: ");
 		$def[$graphs] .= rrd::gprint  ("http", array("LAST","MAX","AVERAGE"), "%7.2lf%Sops/s");
 
-		$def[$graphs] .= rrd::line1   ("fcp", "#00FF00", "FCP ops/s\:   ");
+		$def[$graphs] .= rrd::line1   ("fcp", "#00FF00", "FCP   ops/s\: ");
 		$def[$graphs] .= rrd::gprint  ("fcp", array("LAST","MAX","AVERAGE"), "%7.2lf%Sops/s");
 
 		$def[$graphs] .= rrd::line1   ("iscsi", "#0000FF", "iSCSI ops/s\: ");
