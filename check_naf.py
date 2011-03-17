@@ -2,7 +2,7 @@
 # -*- encoding: utf-8 -*-
 
 #####################################################################
-# (c) 2006-2010 by Sven Velt and team(ix) GmbH, Nuernberg, Germany  #
+# (c) 2006-2011 by Sven Velt and team(ix) GmbH, Nuernberg, Germany  #
 #                  sv@teamix.net                                    #
 #                                                                   #
 # This file is part of check_naf (FKA check_netappfiler)            #
@@ -21,9 +21,24 @@
 # along with check_naf. If not, see <http://www.gnu.org/licenses/>. #
 #####################################################################
 
+import os
 import sys
 
-from monitoringplugin import SNMPMonitoringPlugin
+try:
+	from monitoringplugin import SNMPMonitoringPlugin
+except ImportError:
+	print '=========================='
+	print 'AIKS! Python import error!'
+	print '==========================\n'
+	print 'Could not find "monitoringplugin.py"!\n'
+	print 'Did you download "%s"' % os.path.basename(sys.argv[0])
+	print 'without "monitoringplugin.py"?\n'
+	print 'Please go back to'
+	print 'http://oss.teamix.org/projects/monitoringplugins/ and download it,'
+	print 'or even better:'
+	print 'get a hole archive at http://oss.teamix.org/projects/monitoringplugins/files\n'
+	sys.exit(127)
+
 
 class CheckNAF(SNMPMonitoringPlugin):
 	OID = {

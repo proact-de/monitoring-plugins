@@ -1,9 +1,47 @@
-#!/usr/bin/python
+#!/usr/bin/env python
+# -*- encoding: utf-8 -*-
 
-from monitoringplugin import MonitoringPlugin
+#####################################################################
+# (c) 2007-2011 by Sven Velt and team(ix) GmbH, Nuernberg, Germany  #
+#                  sv@teamix.net                                    #
+#                                                                   #
+# This file is part of "team(ix) Monitoring Plugins"                #
+# URL: http://oss.teamix.org/projects/monitoringplugins/            #
+#                                                                   #
+# This file is free software: you can redistribute it and/or modify #
+# it under the terms of the GNU General Public License as published #
+# by the Free Software Foundation, either version 2 of the License, #
+# or (at your option) any later version.                            #
+#                                                                   #
+# This file is distributed in the hope that it will be useful, but  #
+# WITHOUT ANY WARRANTY; without even the implied warranty of        #
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the      #
+# GNU General Public License for more details.                      #
+#                                                                   #
+# You should have received a copy of the GNU General Public License #
+# along with this file. If not, see <http://www.gnu.org/licenses/>. #
+#####################################################################
 
+import os
 import re
+import sys
 import urllib2
+
+try:
+	from monitoringplugin import MonitoringPlugin
+except ImportError:
+	print '=========================='
+	print 'AIKS! Python import error!'
+	print '==========================\n'
+	print 'Could not find "monitoringplugin.py"!\n'
+	print 'Did you download "%s"' % os.path.basename(sys.argv[0])
+	print 'without "monitoringplugin.py"?\n'
+	print 'Please go back to'
+	print 'http://oss.teamix.org/projects/monitoringplugins/ and download it,'
+	print 'or even better:'
+	print 'get a hole archive at http://oss.teamix.org/projects/monitoringplugins/files\n'
+	sys.exit(127)
+
 
 plugin = MonitoringPlugin(pluginname='check_apaches', tagforstatusline='APACHE', description='Check Apache workers', version='0.1')
 
