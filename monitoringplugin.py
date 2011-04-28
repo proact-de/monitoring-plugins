@@ -234,28 +234,32 @@ class MonitoringPlugin(object):
 
 
 	def brain2output(self):
-		out = [[], [], [], []]
-		for check in self.__brain_checks:
-			tagtarget = self.tagtarget(check['tag'], check.get('target'))
-			returncode = check.get('returncode') or 0
-			self.add_returncode(returncode)
-
-			out[returncode].append(tagtarget)
-			#if returncode == 0:
-			#	self.add_output(tagtarget)
-			#else:
-			#	self.add_output(tagtarget + '(' + check.get('output') + ') ')
-
-			self.add_multilineoutput(self.RETURNSTRINGS[returncode] + ' ' + tagtarget + ' - ' + check.get('output'))
+		if len(self.__brain_checks) == 1:
+			check = self.__brain_checks[0]
+			self.add_output(check.get('output'))
 			if check.get('multilineoutput'):
 				self.add_multilineoutput(check.get('multilineoutput'))
+			self.add_returncode(check.get('returncode') or 0)
 
-		statusline = []
-		for retcode in self.returncode_priority:
-			if len(out[retcode]):
-				statusline.append(str(len(out[retcode])) + ' ' + self.RETURNSTRINGS[retcode] + ': ' + ' '.join(out[retcode]))
-		statusline = ', '.join(statusline)
-		self.add_output(statusline)
+		else:
+			out = [[], [], [], []]
+			for check in self.__brain_checks:
+				tagtarget = self.tagtarget(check['tag'], check.get('target'))
+				returncode = check.get('returncode') or 0
+				self.add_returncode(returncode)
+
+				out[returncode].append(tagtarget)
+
+				self.add_multilineoutput(self.RETURNSTRINGS[returncode] + ' ' + tagtarget + ' - ' + check.get('output'))
+				if check.get('multilineoutput'):
+					self.add_multilineoutput(check.get('multilineoutput'))
+
+			statusline = []
+			for retcode in self.returncode_priority:
+				if len(out[retcode]):
+					statusline.append(str(len(out[retcode])) + ' ' + self.RETURNSTRINGS[retcode] + ': ' + ' '.join(out[retcode]))
+			statusline = ', '.join(statusline)
+			self.add_output(statusline)
 
 		for pd in self.__brain_perfdata:
 			self.format_add_performancedata(**pd)
