@@ -451,6 +451,80 @@ class CheckNAF(SNMPMonitoringPlugin):
 		return self.remember_check('snapmirror:' + target, returncode, output)
 
 
+	def common_snapvault(self, idx, **kwa):
+		if not 'lag' in kwa:
+			kwa['lag'] = long(self.SNMPGET(self.OID['Snapvault_Lag'], idx)) / 100
+		if not 'rc_lag' in kwa:
+			kwa['rc_lag'] = self.value_wc_to_returncode(kwa['lag'], kwa['warn'], kwa['crit'])
+		if not 'state' in kwa:
+			kwa['state'] = int(self.SNMPGET(self.OID['Snapvault_State'], idx))
+		if not 'rc_state' in kwa:
+			kwa['rc_state'] = self.map_status_to_returncode(int(kwa['state']), self.OWC['Snapvault_State'])
+		if not 'src' in kwa:
+			kwa['src'] = self.SNMPGET(self.OID['Snapvault_Src'], idx)
+		if not 'dst' in kwa:
+			kwa['dst'] = self.SNMPGET(self.OID['Snapvault_Dst'], idx)
+		if not 'status' in kwa:
+			kwa['status'] = int(self.SNMPGET(self.OID['Snapvault_Status'], idx))
+
+		returncode = self.max_returncode([kwa['rc_state'], kwa['rc_lag']])
+
+		if kwa['rc_lag'] in [1,2]:
+			max_lag = [None, kwa['warn'], kwa['crit']][kwa['rc_lag']]
+			output = 'Lag too high (%s > %s)! ' % (kwa['lag'], max_lag)
+		else:
+			output = ''
+
+		output += 'Source: "' + kwa['src'] + '", Destination: "' + kwa['dst'] + '", '
+		output += 'State: ' + self.Status2String['Snapvault_State'].get(str(kwa['state'])) + ', '
+		output += 'Status: ' + self.Status2String['Snapvault_Status'].get(str(kwa['status']))
+
+		return (returncode, output)
+
+
+	def check_snapvault_all(self, target, warn, crit):
+		verbose = 'VERB' in target
+		debug = 'DEBUG' in target
+
+		sv_idx = self.SNMPWALK(self.OID['Snapvault_Index'])
+		sv_lag = self.SNMPWALK(self.OID['Snapvault_Lag'])
+		sv_state = self.SNMPWALK(self.OID['Snapvault_State'])
+
+		rcs_lag = []
+		for lag in sv_lag:
+			rcs_lag.append(self.value_wc_to_returncode(int(lag), warn, crit))
+		rcs_state = []
+		for state in sv_state:
+			rcs_state.append(self.map_status_to_returncode(int(state), self.OWC['Snapvault_State']))
+
+		rc_lag = self.max_returncode(rcs_lag)
+		rc_state = self.max_returncode(rcs_state)
+
+		returncode = self.max_returncode([rc_lag, rc_state])
+
+		if returncode == self.RETURNCODE['OK'] and not debug:
+			return self.remember_check('snapvault:ALL', returncode, 'All SnapVaults OK')
+
+		sv_src = self.SNMPWALK(self.OID['Snapvault_Src'])
+		sv_dst = self.SNMPWALK(self.OID['Snapvault_Dst'])
+		sv_status = self.SNMPWALK(self.OID['Snapvault_Status'])
+
+		if not( len(sv_idx) == len(sv_lag) == len(sv_state) == len(sv_src) == len(sv_dst) == len(sv_status) ):
+			return self.remember_check('snapvault:ALL', returncode, 'Wrong number of status informations, but sure an error!')
+
+		output = []
+
+		for i in xrange(0, len(sv_idx)):
+			if rcs_lag[i] != self.RETURNCODE['OK'] or rcs_state != self.RETURNCODE['OK'] or (verbose or debug):
+				(rc_thissv, output_thissv) = self.common_snapvault(sv_idx[i], src=sv_src[i], dst=sv_dst[i], lag=sv_lag[i], state=sv_state[i], status=sv_status[i], rc_lag=rcs_lag[i], rc_state=rcs_state[i], warn=warn, crit=crit)
+
+				if rc_thissv != self.RETURNCODE['OK'] or debug:
+					output.append(output_thissv)
+
+		output = ' / '.join(output)
+		return self.remember_check('snapvault:ALL', returncode, output)
+
+
 	def check_snapvault(self, target, warn, crit):
 		if self.SNMPGET(self.OID['Snapvault_LicensePrimary']) != '2' and self.SNMPGET(self.OID['Snapvault_LicenseSecondary']) != '2':
 			return self.remember_check('snapvault', self.RETURNCODE['CRITICAL'], 'No license for SnapVault')
@@ -461,6 +535,9 @@ class CheckNAF(SNMPMonitoringPlugin):
 		if not target:
 			return self.remember_check('snapvault', self.RETURNCODE['OK'], 'SnapVault is turned on!')
 
+		if target.startswith('ALL'):
+			return self.check_snapvault_all(target, warn, crit)
+
 		idx = self.find_in_table(self.OID['Snapvault_Index'], self.OID['Snapvault_Src'], target)
 		if idx == None:
 			idx = self.find_in_table(self.OID['Snapvault_Index'], self.OID['Snapvault_Dst'], target)
@@ -468,26 +545,7 @@ class CheckNAF(SNMPMonitoringPlugin):
 		if idx == None:
 			return self.remember_check('snapvault', self.RETURNCODE['UNKNOWN'], 'No snapvault with source or destination "' + target + '" found!')
 
-		sv_src = self.SNMPGET(self.OID['Snapvault_Src'], idx)
-		sv_dst = self.SNMPGET(self.OID['Snapvault_Dst'], idx)
-		sv_status = int(self.SNMPGET(self.OID['Snapvault_Status'], idx))
-		sv_state = int(self.SNMPGET(self.OID['Snapvault_State'], idx))
-		sv_lag = long(self.SNMPGET(self.OID['Snapvault_Lag'], idx)) / 100
-
-		rc_state = self.map_status_to_returncode(sv_state, self.OWC['Snapvault_State'])
-		rc_lag = self.value_wc_to_returncode(sv_lag, warn, crit)
-
-		returncode = self.max_returncode([rc_state, rc_lag])
-
-		if rc_lag in [1,2]:
-			max_lag = [None, warn, crit][rc_lag]
-			output = 'Lag too high (%s > %s)! ' % (sv_lag, max_lag)
-		else:
-			output = ''
-
-		output += 'Source: "' + sv_src + '", Destination: "' + sv_dst + '", '
-		output += 'State: ' + self.Status2String['Snapvault_State'].get(str(sv_state)) + ', '
-		output += 'Status: ' + self.Status2String['Snapvault_Status'].get(str(sv_status))
+		(returncode, output) = self.common_snapvault(idx, warn=warn, crit=crit)
 
 		return self.remember_check('snapvault:' + target, returncode, output)
 
