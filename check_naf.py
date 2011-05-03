@@ -449,11 +449,13 @@ class CheckNAF(SNMPMonitoringPlugin):
 
 		idxs = self.SNMPWALK(self.OID[what+'_Index'])
 		lags = self.SNMPWALK(self.OID[what+'_Lag'])
+		for i in xrange(0, len(lags)):
+			lags[i] = long(lags[i]) / 100
 		states = self.SNMPWALK(self.OID[what+'_State'])
 
 		rcs_lag = []
 		for lag in lags:
-			rcs_lag.append(self.value_wc_to_returncode(int(lag), warn, crit))
+			rcs_lag.append(self.value_wc_to_returncode(lag, warn, crit))
 		rcs_state = []
 		for state in states:
 			rcs_state.append(self.map_status_to_returncode(int(state), self.OWC[what+'_State']))
