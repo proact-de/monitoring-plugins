@@ -430,7 +430,7 @@ class CheckNAF(SNMPMonitoringPlugin):
 
 		if kwa['rc_lag'] in [1,2]:
 			max_lag = [None, kwa['warn'], kwa['crit']][kwa['rc_lag']]
-			output = 'Lag too high (%s > %s)! ' % (kwa['lag'], max_lag)
+			output = 'Lag too high (%s (%s) > %s (%s))! ' % (kwa['lag'], self.seconds_to_hms(kwa['lag']), max_lag, self.seconds_to_hms(max_lag))
 		else:
 			output = ''
 
