@@ -287,6 +287,15 @@ class MonitoringPlugin(object):
 			return value
 
 
+	def seconds_to_hms(self, seconds):
+		seconds = int(seconds)
+		hours = int(seconds / 3600)
+		seconds -= (hours * 3600)
+		minutes = seconds / 60
+		seconds -= (minutes * 60)
+		return '%i:%02i:%02i' % (hours, minutes, seconds)
+
+
 	def human_to_number(self, value, total=None):
 		if total:
 			if not self.is_float(total):
