@@ -688,7 +688,7 @@ class CheckNAF(SNMPMonitoringPlugin):
 
 
 def main():
-	plugin = CheckNAF(pluginname='check_naf', tagforstatusline='NAF', description=u'Monitoring NetApp™ FAS systems', version='0.9')
+	plugin = CheckNAF(pluginname='check_naf', tagforstatusline='NAF', description=u'Monitoring NetApp(tm) FAS systems', version='0.9')
 
 	plugin.add_cmdlineoption('', '--separator', 'separator', 'Separator for check/target/warn/crit', metavar=',', default=',')
 	plugin.add_cmdlineoption('', '--subseparator', 'subseparator', 'Separator for multiple checks or targets', metavar='+', default='+')
