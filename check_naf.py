@@ -47,6 +47,18 @@ class CheckNAF(SNMPMonitoringPlugin):
 			'Cluster_InterconnectStatus': '.1.3.6.1.4.1.789.1.2.3.8.0',
 			'Cluster_CannotTakeOverCause': '.1.3.6.1.4.1.789.1.2.3.3.0',
 
+			'CIFS_Connected_Users': '.1.3.6.1.4.1.789.1.7.2.9.0',
+			'CIFS_Total_Ops': '.1.3.6.1.4.1.789.1.7.3.1.1.1.0',
+			'CIFS_Total_Calls': '.1.3.6.1.4.1.789.1.7.3.1.1.2.0',
+			'CIFS_Bad_Calls': '.1.3.6.1.4.1.789.1.7.3.1.1.3.0',
+			'CIFS_Get_Attrs': '.1.3.6.1.4.1.789.1.7.3.1.1.4.0',
+			'CIFS_Reads': '.1.3.6.1.4.1.789.1.7.3.1.1.5.0',
+			'CIFS_Writes': '.1.3.6.1.4.1.789.1.7.3.1.1.6.0',
+			'CIFS_Locks': '.1.3.6.1.4.1.789.1.7.3.1.1.7.0',
+			'CIFS_Opens': '.1.3.6.1.4.1.789.1.7.3.1.1.8.0',
+			'CIFS_DirOps': '.1.3.6.1.4.1.789.1.7.3.1.1.9.0',
+			'CIFS_Others': '.1.3.6.1.4.1.789.1.7.3.1.1.10.0',
+
 			'CPU_Arch': '.1.3.6.1.4.1.789.1.1.11.0',
 			'CPU_Time_Busy': '.1.3.6.1.4.1.789.1.2.1.3.0',
 			'CPU_Time_Idle': '.1.3.6.1.4.1.789.1.2.1.5.0',
@@ -176,6 +188,46 @@ class CheckNAF(SNMPMonitoringPlugin):
 			if value in mapping[returncode]:
 				return returncode
 		return 3
+
+
+	def check_cifs(self, target='', warn='', crit=''):
+		if target == 'users':
+			cifsConnectedUsers = long(self.SNMPGET(self.OID['CIFS_Connected_Users']))
+			returncode = self.value_wc_to_returncode(cifsConnectedUsers, warn, crit)
+			output = "%s connected users" % cifsConnectedUsers
+			perfdata = [{'label':'nacifs_users', 'value':cifsConnectedUsers, 'unit':'', 'warn':warn, 'crit':crit, 'min':0},]
+
+		elif target == 'stats':
+			cifsTotalOps = self.SNMPGET(self.OID['CIFS_Total_Ops'])
+			cifsTotalCalls = self.SNMPGET(self.OID['CIFS_Total_Calls'])
+			cifsBadCalls = self.SNMPGET(self.OID['CIFS_Bad_Calls'])
+			cifsGetAttrs = self.SNMPGET(self.OID['CIFS_Get_Attrs'])
+			cifsReads = self.SNMPGET(self.OID['CIFS_Reads'])
+			cifsWrites = self.SNMPGET(self.OID['CIFS_Writes'])
+			cifsLocks = self.SNMPGET(self.OID['CIFS_Locks'])
+			cifsOpens = self.SNMPGET(self.OID['CIFS_Opens'])
+			cifsDirOps = self.SNMPGET(self.OID['CIFS_DirOps'])
+			cifsOthers = self.SNMPGET(self.OID['CIFS_Others'])
+
+			returncode = self.RETURNCODE['OK']
+			output = 'CIFS statistics'
+			perfdata = []
+			perfdata.append({'label':'nacifs_totalcalls', 'value':cifsTotalCalls, 'unit':'c', 'min':'0'})
+			perfdata.append({'label':'nacifs_badcalls', 'value':cifsBadCalls, 'unit':'c', 'min':'0'})
+			perfdata.append({'label':'nacifs_getattrs', 'value':cifsGetAttrs, 'unit':'c', 'min':'0'})
+			perfdata.append({'label':'nacifs_reads', 'value':cifsReads, 'unit':'c', 'min':'0'})
+			perfdata.append({'label':'nacifs_writes', 'value':cifsWrites, 'unit':'c', 'min':'0'})
+			perfdata.append({'label':'nacifs_locks', 'value':cifsLocks, 'unit':'c', 'min':'0'})
+			perfdata.append({'label':'nacifs_opens', 'value':cifsOpens, 'unit':'c', 'min':'0'})
+			perfdata.append({'label':'nacifs_dirops', 'value':cifsDirOps, 'unit':'c', 'min':'0'})
+			perfdata.append({'label':'nacifs_others', 'value':cifsOthers, 'unit':'c', 'min':'0'})
+
+		else:
+			returncode = self.RETURNCODE['UNKNOWN']
+			output = 'Unknown CIFS check/target: "%s"' % target
+			perfdata = []
+
+		return self.remember_check('cifs', returncode, output, perfdata=perfdata, target=target)
 
 
 	def check_cpu(self, warn='', crit=''):
@@ -761,6 +813,8 @@ def main():
 			result = plugin.check_global()
 		elif check == 'cluster':
 			result = plugin.check_cluster()
+		elif check == 'cifs':
+			result = plugin.check_cifs(target=target, warn=warn, crit=crit)
 		elif check == 'cpu':
 			result = plugin.check_cpu(warn=warn, crit=crit)
 		elif check == 'disk':
