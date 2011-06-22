@@ -233,9 +233,6 @@ while( count($this->DS) > 0 ) {
 		$def[$graphs] .= rrd::cdef    ("df", "dt,du,-,so,-");
 
 
-		$def[$graphs] .= rrd::line1   ("vt", "#000000", "Whole Volume     ");
-		$def[$graphs] .= rrd::gprint  ("vt", array("LAST","MAX","AVERAGE"), "%6.2lf%S", "\\n");
-
 		$def[$graphs] .= rrd::area    ("du", "#AAAAAA", "Data\: used space ");
 		$def[$graphs] .= rrd::gprint  ("du", array("LAST","MAX","AVERAGE"), "%6.2lf%S", "\\n");
 
@@ -250,6 +247,9 @@ while( count($this->DS) > 0 ) {
 
 		$def[$graphs] .= rrd::area    ("su", "#0000CC", "Snap\: used space ", "STACK");
 		$def[$graphs] .= rrd::gprint  ("su", array("LAST","MAX","AVERAGE"), "%6.2lf%S", "\\n");
+
+		$def[$graphs] .= rrd::line1   ("vt", "#000000", "Whole Volume     ");
+		$def[$graphs] .= rrd::gprint  ("vt", array("LAST","MAX","AVERAGE"), "%6.2lf%S", "\\n");
 
 
 
@@ -267,9 +267,9 @@ while( count($this->DS) > 0 ) {
 		$def[$graphs] .= rrd::def     ("it", $v_it['RRDFILE'], $v_it['DS'], "AVERAGE");
 
 		$def[$graphs] .= rrd::area    ("it", "#00FF00");
-		$def[$graphs] .= rrd::line1   ("it", "#000000");
 		$def[$graphs] .= rrd::area    ("iu", "#0000FF", "INodes used\: ");
 		$def[$graphs] .= rrd::gprint  ("iu", array("LAST","MAX","AVERAGE"), "%7.2lf%S");
+		$def[$graphs] .= rrd::line1   ("it", "#000000", "Total INodes\\n");
 		$def[$graphs] .= wc($v_iu);
 
 
