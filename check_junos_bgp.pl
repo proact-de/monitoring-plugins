@@ -47,6 +47,8 @@ use Regexp::IPv6 qw( $IPv6_re );
 
 use JUNOS::Device;
 
+binmode STDOUT, ":utf8";
+
 my $valid_checks = "peers_count|prefix_count";
 
 my $plugin = Nagios::Plugin->new(
