@@ -46,7 +46,7 @@ use JUNOS::Device;
 
 binmode STDOUT, ":utf8";
 
-my $valid_checks = "members_count|master|backup|interfaces";
+my $valid_checks = "members_count|master|backup|interfaces|version";
 
 my $plugin = Nagios::Plugin->new(
 	plugin    => 'check_junos_vc',
@@ -84,6 +84,8 @@ The following checks are available:
   * interfaces: Check that all VCP interfaces are up. If warning or critical
     thresholds have been specified, also check the number of VCP interfaces
     against the thresholds.
+
+  * version: Check the version of all physically connected members.
 
 Warning and critical thresholds may be specified in the format documented at
 http://nagiosplug.sourceforge.net/developer-guidelines.html#THRESHOLDFORMAT.",
@@ -399,6 +401,63 @@ foreach my $check (@{$conf{'checks'}}) {
 			threshold => undef,
 		);
 	}
+	elsif ($check->{'name'} eq 'version') {
+		my %versions = get_versions($junos);
+		my @v_keys   = keys %versions;
+
+		my $first    = undef;
+
+		my @base_mismatch = ();
+		my %mismatches    = ();
+
+		foreach my $k (@v_keys) {
+			my $base  = $versions{$k}->{'base'};
+			my $other = $versions{$k}->{'other'};
+
+			foreach my $o (keys %$other) {
+				if ($other->{$o} ne $base) {
+					$mismatches{$k}->{$base} = 1;
+					$mismatches{$k}->{$other->{$o}} = 1;
+				}
+			}
+		}
+
+		$first = shift @v_keys;
+		$first = $versions{$first};
+		foreach my $k (@v_keys) {
+			if ($first->{'base'} ne $versions{$k}->{'base'}) {
+				push @base_mismatch, $k;
+			}
+		}
+
+		if (scalar @base_mismatch) {
+			my @first_match = grep {
+					$versions{$_}->{'base'} eq $first->{'base'}
+				} keys %versions;
+			my %mismatches = ();
+
+			foreach my $m (@base_mismatch) {
+				push @{$mismatches{$versions{$m}->{'base'}}}, $m;
+			}
+
+			$plugin->add_message(CRITICAL, "version mismatch detected: "
+				. $first->{'base'} . " @ ("
+				. join(", ", @first_match) . ") != "
+				. join(" != ", map {
+							$_ . " @ (" . join(", ", @{$mismatches{$_}}) . ")"
+						} keys %mismatches));
+		}
+		elsif (scalar(keys %mismatches)) {
+			$plugin->add_message(WARNING, "version mismatches detected: "
+				. join(" / ", map {
+						"$_: " . join(" != ", keys %{$mismatches{$_}})
+					} keys %mismatches));
+		}
+		else {
+			$plugin->add_message(OK, "all members at version "
+				. $first->{'base'});
+		}
+	}
 }
 
 # add total numbers to perfdata to ease graphing stuff
@@ -532,6 +591,47 @@ sub get_vc_interfaces
 		verbose(3, "VCP Interfaces: " . join(", ", @i));
 	}
 	return @ifaces;
+}
+
+sub get_versions
+{
+	my $device   = shift;
+	my %versions = ();
+
+	my $cmd = "show version";
+	my $res = send_command($device, $cmd);
+
+	my @v = ();
+
+	if (! ref $res) {
+		$plugin->die($res);
+	}
+
+	@v = $res->getElementsByTagName('multi-routing-engine-item');
+
+	foreach my $i (@v) {
+		my $name  = get_obj_element($i, 're-name');
+		my @infos = $i->getElementsByTagName('software-information');
+
+		@infos = $infos[0]->getElementsByTagName('package-information');
+
+		foreach my $j (@infos) {
+			my $comment = get_obj_element($j, 'comment');
+			my ($desc, $version);
+
+			$comment =~ m/^(.*) \[([^]]+)\]$/;
+			$desc    = $1;
+			$version = $2;
+
+			if ($desc eq "JUNOS Base OS boot") {
+				$versions{$name}->{'base'} = $version;
+			}
+			else {
+				$versions{$name}->{'other'}->{$desc} = $version;
+			}
+		}
+	}
+	return %versions;
 }
 
 sub add_arg
