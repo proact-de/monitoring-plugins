@@ -22,10 +22,10 @@
 # along with this file. If not, see <http://www.gnu.org/licenses/>. #
 #####################################################################
 
-__version__ = '0.0.100802'
+__version__ = '0.0.110715'
 __all__ = ['MonitoringPlugin', 'SNMPMonitoringPlugin']
 
-import optparse, os, re, sys
+import datetime, optparse, os, re, sys
 
 try:
 	import netsnmp
@@ -294,6 +294,10 @@ class MonitoringPlugin(object):
 		minutes = seconds / 60
 		seconds -= (minutes * 60)
 		return '%i:%02i:%02i' % (hours, minutes, seconds)
+
+
+	def seconds_to_timedelta(self, seconds):
+		return datetime.timedelta(seconds=long(seconds))
 
 
 	def human_to_number(self, value, total=None):
