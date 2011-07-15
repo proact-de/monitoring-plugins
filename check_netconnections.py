@@ -48,7 +48,7 @@ plugin.add_cmdlineoption('-p', '', 'port', 'port number', default=None)
 plugin.add_cmdlineoption('-t', '--tcp', 'tcp', 'count TCP connections (default)', action='store_true')
 plugin.add_cmdlineoption('-u', '--udp', 'udp', 'count TCP connections', action='store_true')
 plugin.add_cmdlineoption('-4', '', 'v4', 'count IPv4 connections (default)', action='store_true')
-plugin.add_cmdlineoption('-6', '', 'v6', 'count IPv6 connections', action='store_true')
+plugin.add_cmdlineoption('-6', '', 'v6', 'count IPv6 connections (default)', action='store_true')
 plugin.add_cmdlineoption('-w', '', 'warn', 'warning thresold', default='20')
 plugin.add_cmdlineoption('-c', '', 'crit', 'warning thresold', default='50')
 
@@ -67,6 +67,7 @@ if not plugin.options.udp and not plugin.options.tcp:
 
 if not plugin.options.v4 and not plugin.options.v6:
 	plugin.options.v4 = True
+	plugin.options.v6 = True
 
 
 # RegExp
