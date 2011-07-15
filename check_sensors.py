@@ -93,8 +93,10 @@ for sensorid in plugin.options.sensorid:
 	plugin.verbose(2, 'Checking age of file')
 	fileage = time.time() - os.path.getmtime(filename)
 	if fileage > plugin.options.maxage:
+		returncode = 3
 		plugin.add_output('Data of sensor "%s" to old' % sensorid)
-		plugin.add_returncode(3)
+		plugin.add_multilineoutput('%s %s because of file age: %s, limit: %s' % (sensorid, plugin.RETURNSTRINGS[returncode], plugin.seconds_to_timedelta(fileage), plugin.seconds_to_timedelta(plugin.options.maxage)))
+		plugin.add_returncode(returncode)
 		plugin.verbose(2, 'File to old, age: %s but only %s seconds allowed'% (long(fileage), plugin.options.maxage))
 	else:
 		plugin.verbose(2, 'File age OK, age: %s and %s seconds are allowed'% (long(fileage), plugin.options.maxage))
