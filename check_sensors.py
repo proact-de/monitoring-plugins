@@ -47,7 +47,7 @@ except ImportError:
 plugin = MonitoringPlugin(pluginname='check_sensors', tagforstatusline='Sensors', description='Check environment sensors', version='0.2')
 
 plugin.add_cmdlineoption('-s', '', 'sensorid', '(comma separated list of) sensor id(s), no spaces', default=None)
-plugin.add_cmdlineoption('-m', '', 'maxage', 'maximum age of data files (default: 600 seconds/10 minutes)', type="int", default=600)
+plugin.add_cmdlineoption('-m', '', 'maxage', 'maximum age of data files (default: 900 seconds/15 minutes)', type="int", default=900)
 plugin.add_cmdlineoption('-p', '', 'path', 'path to data files', default='/tmp')
 plugin.add_cmdlineoption('-b', '', 'basefilename', 'base of sensor file name', default='sensor_')
 plugin.add_cmdlineoption('-w', '', 'tempwarn', 'warning thresold for temperature sensors', default=None)
