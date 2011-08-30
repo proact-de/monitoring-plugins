@@ -5,20 +5,21 @@
 # (c) 2006-2011 by Sven Velt and team(ix) GmbH, Nuernberg, Germany  #
 #                  sv@teamix.net                                    #
 #                                                                   #
-# This file is part of check_naf (FKA check_netappfiler)            #
+# This file is part of "team(ix) Monitoring Plugins"                #
+# URL: http://oss.teamix.org/projects/monitoringplugins/            #
 #                                                                   #
-# check_naf is free software: you can redistribute it and/or modify #
+# This file is free software: you can redistribute it and/or modify #
 # it under the terms of the GNU General Public License as published #
 # by the Free Software Foundation, either version 2 of the License, #
 # or (at your option) any later version.                            #
 #                                                                   #
-# check_naf is distributed in the hope that it will be useful, but  #
+# This file is distributed in the hope that it will be useful, but  #
 # WITHOUT ANY WARRANTY; without even the implied warranty of        #
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the      #
 # GNU General Public License for more details.                      #
 #                                                                   #
 # You should have received a copy of the GNU General Public License #
-# along with check_naf. If not, see <http://www.gnu.org/licenses/>. #
+# along with this file. If not, see <http://www.gnu.org/licenses/>. #
 #####################################################################
 
 import os
