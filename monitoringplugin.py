@@ -487,6 +487,12 @@ class SNMPMonitoringPlugin(MonitoringPlugin):
 			self.verbose(3, 'Using commandline: ' + self.__CMDLINE_get)
 			self.verbose(3, 'Using commandline: ' + self.__CMDLINE_walk)
 
+			# Test if snmp(get|walk) are executable
+			for fpath in [self.__CMDLINE_get, self.__CMDLINE_walk,]:
+				fpath = fpath.split(' ',1)[0]
+				if not( os.path.exists(fpath) and os.path.isfile(fpath) and os.access(fpath, os.X_OK) ):
+					self.back2nagios(3, 'Could not execute "%s"' % fpath)
+
 		self.__prepared_snmp = True
 
 
