@@ -300,10 +300,20 @@ class MonitoringPlugin(object):
 		return datetime.timedelta(seconds=long(seconds))
 
 
-	def human_to_number(self, value, total=None):
+	def human_to_number(self, value, total=None, unit=['',]):
 		if total:
 			if not self.is_float(total):
-				total = self.human_to_number(total)
+				total = self.human_to_number(total, unit=unit)
+
+		if type(unit) == list:
+			unit = [u.lower() for u in unit]
+		elif type(unit) == str:
+			unit = [unit.lower(),]
+		else:
+			unit = ['',]
+
+		if value.lower()[-1] in unit:
+			value = value[0:-1]
 
 		if self.is_float(value):
 			return float(value)
@@ -323,7 +333,7 @@ class MonitoringPlugin(object):
 			return value
 
 
-	def range_dehumanize(self, range, total=None):
+	def range_dehumanize(self, range, total=None, unit=['',]):
 		newrange = ''
 
 		if len(range):
@@ -332,10 +342,10 @@ class MonitoringPlugin(object):
 				range = range[1:]
 
 			parts = range.split(':')
-			newrange += ('%f' % self.human_to_number(parts[0], total)).rstrip('0').rstrip('.')
-			
+			newrange += ('%s' % self.human_to_number(parts[0], total, unit)).rstrip('0').rstrip('.')
+
 			if len(parts) > 1:
-				newrange += ':' + ('%f' % self.human_to_number(parts[1], total)).rstrip('0').rstrip('.')
+				newrange += ':' + ('%s' % self.human_to_number(parts[1], total, unit)).rstrip('0').rstrip('.')
 
 			if range != newrange:
 				self.verbose(3, 'Changed range/thresold from "' + range + '" to "' + newrange + '"')
