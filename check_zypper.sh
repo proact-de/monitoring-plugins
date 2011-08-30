@@ -42,6 +42,12 @@
 # From "/etc/sudoers" / "visudo":
 # nagios ALL = NOPASSWD: /usr/bin/zypper ref,/usr/bin/zypper -q pchk
 
+#
+if [ ! -x /usr/bin/zypper ] ; then
+	echo 'Zypper CRITICAL - Zypper not found!'
+	exit 2
+fi
+
 # Refresh repositories
 sudo /usr/bin/zypper ref >/dev/null 2>&1
 
