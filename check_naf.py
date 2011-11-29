@@ -60,6 +60,8 @@ class CheckNAF(SNMPMonitoringPlugin):
 			'CIFS_DirOps': '.1.3.6.1.4.1.789.1.7.3.1.1.9.0',
 			'CIFS_Others': '.1.3.6.1.4.1.789.1.7.3.1.1.10.0',
 
+			'CP': '.1.3.6.1.4.1.789.1.2.6',
+
 			'CPU_Arch': '.1.3.6.1.4.1.789.1.1.11.0',
 			'CPU_Time_Busy': '.1.3.6.1.4.1.789.1.2.1.3.0',
 			'CPU_Time_Idle': '.1.3.6.1.4.1.789.1.2.1.5.0',
@@ -229,6 +231,29 @@ class CheckNAF(SNMPMonitoringPlugin):
 			perfdata = []
 
 		return self.remember_check('cifs', returncode, output, perfdata=perfdata, target=target)
+
+
+	def check_cp(self):
+		cp = self.SNMPWALK(self.OID['CP'])
+		output = 'Consistency Point (in progress %s seconds), Ops: Total(%s) ' % (float(cp[0])/100, cp[7])
+		output += 'Snapshot(%s) LowWaterMark(%s) HighWaterMark(%s) LogFull(%s) CP-b2b(%s) ' % tuple(cp[2:7])
+		output += 'Flush(%s) Sync(%s) LowVBuf(%s) CpDeferred(%s) LowDatavecs(%s)' % tuple(cp[8:13])
+		returncode = self.RETURNCODE['OK']
+		perfdata = []
+		perfdata.append({'label':'nacp_progress', 'value':float(cp[0])/100, 'unit':'s'})
+		perfdata.append({'label':'nacp_total', 'value':cp[7], 'unit':'c'})
+		perfdata.append({'label':'nacp_snapshot', 'value':cp[2], 'unit':'c'})
+		perfdata.append({'label':'nacp_lowwatermark', 'value':cp[3], 'unit':'c'})
+		perfdata.append({'label':'nacp_highwatermark', 'value':cp[4], 'unit':'c'})
+		perfdata.append({'label':'nacp_logfull', 'value':cp[5], 'unit':'c'})
+		perfdata.append({'label':'nacp_b2b', 'value':cp[6], 'unit':'c'})
+		perfdata.append({'label':'nacp_flush', 'value':cp[8], 'unit':'c'})
+		perfdata.append({'label':'nacp_sync', 'value':cp[9], 'unit':'c'})
+		perfdata.append({'label':'nacp_lowvbuf', 'value':cp[10], 'unit':'c'})
+		perfdata.append({'label':'nacp_cpdeferred', 'value':cp[11], 'unit':'c'})
+		perfdata.append({'label':'nacp_lowdatavecs', 'value':cp[12], 'unit':'c'})
+
+		return self.remember_check('cp', returncode, output, perfdata=perfdata)
 
 
 	def check_cpu(self, warn='', crit=''):
@@ -816,6 +841,8 @@ def main():
 			result = plugin.check_cluster()
 		elif check == 'cifs':
 			result = plugin.check_cifs(target=target, warn=warn, crit=crit)
+		elif check == 'cp':
+			result = plugin.check_cp()
 		elif check == 'cpu':
 			result = plugin.check_cpu(warn=warn, crit=crit)
 		elif check == 'disk':
