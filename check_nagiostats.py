@@ -92,40 +92,40 @@ VARs = {
 	'NUMHSTPSVCHK60M': { 'type':long, 'unit':'', },
 	'NUMSVCACTCHK60M': { 'type':long, 'unit':'', },
 	'NUMSVCPSVCHK60M': { 'type':long, 'unit':'', },
-	'AVGACTSVCLAT': { 'type':float, 'unit':'s', 'factor':0.001, },
-	'AVGACTSVCEXT': { 'type':float, 'unit':'s', 'factor':0.001, },
+	'AVGACTSVCLAT': { 'type':float, 'unit':'s', 'factor':0.001, 'descr':'Average active service check latency', },
+	'AVGACTSVCEXT': { 'type':float, 'unit':'s', 'factor':0.001, 'descr':'Average active service check execution time', },
 	'AVGACTSVCPSC': { 'type':float, 'unit':'%', },
-	'AVGPSVSVCLAT': { 'type':float, 'unit':'s', 'factor':0.001, },
+	'AVGPSVSVCLAT': { 'type':float, 'unit':'s', 'factor':0.001, 'descr':'Average passive service check latency', },
 	'AVGPSVSVCPSC': { 'type':float, 'unit':'%', },
 	'AVGSVCPSC': { 'type':float, 'unit':'%', },
-	'AVGACTHSTLAT': { 'type':float, 'unit':'s', 'factor':0.001, },
-	'AVGACTHSTEXT': { 'type':float, 'unit':'s', 'factor':0.001, },
+	'AVGACTHSTLAT': { 'type':float, 'unit':'s', 'factor':0.001, 'descr':'Average active host check latency', },
+	'AVGACTHSTEXT': { 'type':float, 'unit':'s', 'factor':0.001, 'descr':'Average active host check execution time', },
 	'AVGACTHSTPSC': { 'type':float, 'unit':'%', },
-	'AVGPSVHSTLAT': { 'type':float, 'unit':'s', 'factor':0.001, },
+	'AVGPSVHSTLAT': { 'type':float, 'unit':'s', 'factor':0.001, 'descr':'Average passive host check latency', },
 	'AVGPSVHSTPSC': { 'type':float, 'unit':'%', },
 	'AVGHSTPSC': { 'type':float, 'unit':'%', },
-	'MINACTSVCLAT': { 'type':float, 'unit':'s', 'factor':0.001, },
-	'MINACTSVCEXT': { 'type':float, 'unit':'s', 'factor':0.001, },
+	'MINACTSVCLAT': { 'type':float, 'unit':'s', 'factor':0.001, 'descr':'Minimum active service check latency', },
+	'MINACTSVCEXT': { 'type':float, 'unit':'s', 'factor':0.001, 'descr':'Minimum active service check execution time', },
 	'MINACTSVCPSC': { 'type':float, 'unit':'%', },
-	'MINPSVSVCLAT': { 'type':float, 'unit':'s', 'factor':0.001, },
+	'MINPSVSVCLAT': { 'type':float, 'unit':'s', 'factor':0.001, 'descr':'Minimum passive service check latency', },
 	'MINPSVSVCPSC': { 'type':float, 'unit':'%', },
 	'MINSVCPSC': { 'type':float, 'unit':'%', },
-	'MINACTHSTLAT': { 'type':float, 'unit':'s', 'factor':0.001, },
-	'MINACTHSTEXT': { 'type':float, 'unit':'s', 'factor':0.001, },
+	'MINACTHSTLAT': { 'type':float, 'unit':'s', 'factor':0.001, 'descr':'Minimum active host check latency', },
+	'MINACTHSTEXT': { 'type':float, 'unit':'s', 'factor':0.001, 'descr':'Minimum active host check execution time', },
 	'MINACTHSTPSC': { 'type':float, 'unit':'%', },
-	'MINPSVHSTLAT': { 'type':float, 'unit':'s', 'factor':0.001, },
+	'MINPSVHSTLAT': { 'type':float, 'unit':'s', 'factor':0.001, 'descr':'Minimum passive host check latency', },
 	'MINPSVHSTPSC': { 'type':float, 'unit':'%', },
 	'MINHSTPSC': { 'type':float, 'unit':'%', },
-	'MAXACTSVCLAT': { 'type':float, 'unit':'s', 'factor':0.001, },
-	'MAXACTSVCEXT': { 'type':float, 'unit':'s', 'factor':0.001, },
+	'MAXACTSVCLAT': { 'type':float, 'unit':'s', 'factor':0.001, 'descr':'Maximum active service check latency', },
+	'MAXACTSVCEXT': { 'type':float, 'unit':'s', 'factor':0.001, 'descr':'Maximum active service check execution time', },
 	'MAXACTSVCPSC': { 'type':float, 'unit':'%', },
-	'MAXPSVSVCLAT': { 'type':float, 'unit':'s', 'factor':0.001, },
+	'MAXPSVSVCLAT': { 'type':float, 'unit':'s', 'factor':0.001, 'descr':'Maximum passive service check latency', },
 	'MAXPSVSVCPSC': { 'type':float, 'unit':'%', },
 	'MAXSVCPSC': { 'type':float, 'unit':'%', },
-	'MAXACTHSTLAT': { 'type':float, 'unit':'s', 'factor':0.001, },
-	'MAXACTHSTEXT': { 'type':float, 'unit':'s', 'factor':0.001, },
+	'MAXACTHSTLAT': { 'type':float, 'unit':'s', 'factor':0.001, 'descr':'Maximum active host check latency', },
+	'MAXACTHSTEXT': { 'type':float, 'unit':'s', 'factor':0.001, 'descr':'Maximum active host check execution time', },
 	'MAXACTHSTPSC': { 'type':float, 'unit':'%', },
-	'MAXPSVHSTLAT': { 'type':float, 'unit':'s', 'factor':0.001, },
+	'MAXPSVHSTLAT': { 'type':float, 'unit':'s', 'factor':0.001, 'descr':'Maximum passive host check latency', },
 	'MAXPSVHSTPSC': { 'type':float, 'unit':'%', },
 	'MAXHSTPSC': { 'type':float, 'unit':'%', },
 	'NUMACTHSTCHECKS1M': { 'type':long, 'unit':'', },
@@ -169,6 +169,24 @@ VARs = {
 	'NUMEXTCMDS15M': { 'type':long, 'unit':'', },
 	}
 
+CHECKs = {
+	'AVGACTLATENCY': ['AVGACTSVCLAT', 'AVGACTHSTLAT', ],
+	'MAXACTLATENCY': ['MAXACTSVCLAT', 'MAXACTHSTLAT', ],
+	'MINACTLATENCY': ['MINACTSVCLAT', 'MINACTHSTLAT', ],
+	'AVGPSVLATENCY': ['AVGPSVSVCLAT', 'AVGPSVHSTLAT', ],
+	'MAXPSVLATENCY': ['MAXPSVSVCLAT', 'MAXPSVHSTLAT', ],
+	'MINPSVLATENCY': ['MINPSVSVCLAT', 'MINPSVHSTLAT', ],
+	'AVGLATENCY': ['AVGACTSVCLAT', 'AVGACTHSTLAT', 'AVGPSVSVCLAT', 'AVGPSVHSTLAT', ],
+	'MAXLATENCY': ['MAXACTSVCLAT', 'MAXACTHSTLAT', 'MAXPSVSVCLAT', 'MAXPSVHSTLAT',],
+	'MINLATENCY': ['MINACTSVCLAT', 'MINACTHSTLAT', 'MINPSVSVCLAT', 'MINPSVHSTLAT',],
+	'AVGEXECTIME': ['AVGACTSVCEXT', 'AVGACTHSTEXT', ],
+	'MAXEXECTIME': ['MAXACTSVCEXT', 'MAXACTHSTEXT', ],
+	'MINEXECTIME': ['MINACTSVCEXT', 'MINACTHSTEXT', ],
+	'PERFORMANCE': ['AVGACTSVCLAT', 'AVGPSVSVCLAT', 'AVGACTSVCEXT', 'AVGACTHSTLAT', 'AVGPSVHSTLAT', 'AVGACTHSTEXT', ],
+	'PEAK': [ 'MAXACTSVCLAT', 'MAXPSVSVCLAT', 'MAXACTSVCEXT', 'MAXACTHSTLAT', 'MAXPSVHSTLAT', 'MAXACTHSTEXT', ],
+	}
+
+
 plugin.add_cmdlineoption('-C', '', 'checks', 'Use built-in checks (predefined lists of variables)', default='')
 plugin.add_cmdlineoption('-V', '', 'vars', 'List of "nagiostats" variables to check', default='')
 plugin.add_cmdlineoption('-n', '', 'nagiostats', 'Full path to nagiostat', default='')
@@ -192,44 +210,55 @@ if not os.path.exists(plugin.options.nagiostats):
 if not plugin.options.checks and not plugin.options.vars:
 	plugin.back2nagios(3, 'Need either "-C" or "-V"')
 
-# FIXME: Built var list out of -C
+# Checks and Variables
+varlist = []
+varlist_unknown = []
 
-if ',' in plugin.options.vars:
-	plugin.verbose(2, 'Multiple variables detected')
-	plugin.options.vars = plugin.options.vars.split(',')
-else:
-	plugin.verbose(2, 'Single variable detected')
-	plugin.options.vars = [plugin.options.vars, ]
+# Built var list out of -C
+if plugin.options.checks:
+	for check in plugin.options.checks.split(','):
+		if check not in CHECKs:
+			plugin.back2nagios(3, 'Unknown check "%s"' % check)
+		varlist.extend(CHECKs[check])
 
-for var in plugin.options.vars:
-	plugin.verbose(3, 'See if "%s" is a valid variable' % var)
-	if var not in VARs:
-		plugin.back2nagios(3, 'Unknown variable "%s"' % var)
+# Check for unknown vars and build list
+for var in plugin.options.vars.split(','):
+	if var:
+		plugin.verbose(3, 'See if "%s" is a valid variable' % var)
+		if var in VARs:
+			varlist.append(var)
+		else:
+			varlist_unknown.append(var)
 
+# See if there are unknown vars:
+if varlist_unknown:
+	plugin.back2nagios(3, 'Unknown variable(s): %s' % ', '.join(varlist_unknown))
+
+# Thresholds
 if ',' in plugin.options.warn:
 	plugin.verbose(2, 'Multiple warning thresolds detected')
 	plugin.options.warn = plugin.options.warn.split(',')
 else:
 	plugin.verbose(2, 'Single warning thresold detected - use for all variables')
-	plugin.options.warn = [plugin.options.warn, ] * len(plugin.options.vars)
+	plugin.options.warn = [plugin.options.warn, ] * len(varlist)
 
 if ',' in plugin.options.crit:
 	plugin.verbose(2, 'Multiple critical thresolds detected')
 	plugin.options.crit = plugin.options.crit.split(',')
 else:
 	plugin.verbose(2, 'Single critical thresold detected - use for all variables')
-	plugin.options.crit = [plugin.options.crit, ] * len(plugin.options.vars)
+	plugin.options.crit = [plugin.options.crit, ] * len(varlist)
 
 
-plugin.verbose(3, 'Length of vars:  %s' % len(plugin.options.vars) )
+plugin.verbose(3, 'Length of vars:  %s' % len(varlist) )
 plugin.verbose(3, 'Length of warns: %s' % len(plugin.options.warn) )
 plugin.verbose(3, 'Length of crits: %s' % len(plugin.options.crit) )
-if not ( len(plugin.options.vars) == len(plugin.options.warn) == len(plugin.options.crit) ):
+if not ( len(varlist) == len(plugin.options.warn) == len(plugin.options.crit) ):
 	plugin.back2nagios(3, 'Different length of -V, -w and -c')
 
 
 # Go!
-cmdline = '%s -m -d %s' % (plugin.options.nagiostats, ','.join(plugin.options.vars))
+cmdline = '%s -m -d %s' % (plugin.options.nagiostats, ','.join(varlist))
 plugin.verbose(1, 'Using command line: %s' % cmdline)
 cmdline = shlex.split(cmdline)
 try:
@@ -245,16 +274,16 @@ if retcode == 254:
 elif retcode != 0:
 	plugin.back2nagios(3, 'Unknown return code "%s" - please send output of "-vvv" command line to author!' % retcode)
 
-plugin.verbose(1, 'Asked for variable(s): %s' % ' '.join(plugin.options.vars) )
+plugin.verbose(1, 'Asked for variable(s): %s' % ' '.join(varlist) )
 plugin.verbose(1, 'Got response(s): %s' % ' '.join(outputs) )
 
 plugin.verbose(3, 'Length of vars:    %s' % len(outputs) )
-plugin.verbose(3, 'Length of output:  %s' % len(plugin.options.vars) )
-if len(outputs) != len(plugin.options.vars):
+plugin.verbose(3, 'Length of output:  %s' % len(varlist) )
+if len(outputs) != len(varlist):
 	plugin.back2nagios(3, 'Did not get expected infos')
 
-for idx in xrange(0, len(plugin.options.vars)):
-	var = plugin.options.vars[idx]
+for idx in xrange(0, len(varlist)):
+	var = varlist[idx]
 	warn = plugin.options.warn[idx]
 	crit = plugin.options.crit[idx]
 	output = (VARs[var]['type'])(outputs[idx])
@@ -269,9 +298,19 @@ for idx in xrange(0, len(plugin.options.vars)):
 		returncode = plugin.RETURNCODE['OK']
 
 	perfdata = []
-	if VARs[var].get('unit') != None:
+	unit = VARs[var].get('unit')
+	if unit != None:
 		perfdata.append({'label':var, 'value':output, 'unit':VARs[var]['unit'], 'warn':warn, 'crit':crit,})
-	plugin.remember_check(var, returncode, str(output), perfdata=perfdata)
+	else:
+		unit = ''
+
+	descr = VARs[var].get('descr')
+	if  descr != None:
+		longoutput = descr + ': ' + str(output) + unit
+	else:
+		longoutput = str(output) + unit
+
+	plugin.remember_check(var, returncode, longoutput, perfdata=perfdata)
 
 plugin.brain2output()
 plugin.exit()
