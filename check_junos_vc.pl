@@ -812,7 +812,7 @@ sub get_iface_name
 sub get_iface_status
 {
 	my $iface = shift;
-	return get_obj_element($iface, 'admin-status');
+	return get_obj_element($iface, 'oper-status');
 }
 
 sub verbose
