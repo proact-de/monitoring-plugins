@@ -48,6 +48,11 @@ binmode STDOUT, ":utf8";
 
 my $valid_checks = "members_count|master|backup|interfaces|version";
 
+# TODO:
+# (on newer JUNOS (10.4r5.5))
+# request chassis routing-engine master switch check
+# -> graceful switchover status
+
 my $plugin = Nagios::Plugin->new(
 	plugin    => 'check_junos_vc',
 	shortname => 'check_junos_vc',
