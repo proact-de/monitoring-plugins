@@ -67,7 +67,7 @@ my $plugin = Nagios::Plugin->new(
 It may be used, redistributed and/or modified under the terms of the 3-Clause
 BSD License (see http://opensource.org/licenses/BSD-3-Clause).",
 	extra     => "
-This plugin connects to a Juniper™ Switch device and checks various Juniper
+This plugin connects to a Juniper™ Switch device and checks various of its
 components.
 
 A check-tuple consists of the name of the check and, optionally, a \"target\"
