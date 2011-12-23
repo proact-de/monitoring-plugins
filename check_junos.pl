@@ -199,6 +199,11 @@ foreach my $check (@{$conf{'checks'}}) {
 		my $down_count = 0;
 		my @down_ifaces = ();
 
+		my $phys_down_count = 0;
+		my @phys_down_ifaces = ();
+
+		my $have_lag_ifaces = 0;
+
 		foreach my $iface (@interfaces) {
 			my $name = get_iface_name($iface);
 			my $status = check_interface($iface, @targets);
@@ -217,12 +222,52 @@ foreach my $check (@{$conf{'checks'}}) {
 				next;
 			}
 
-			# XXX: check physical interfaces of the aggregate
+			$have_lag_ifaces = 1;
+
+			my @markers = get_liface_marker(get_iface_first_logical($iface));
+			if (! @markers) {
+				next;
+			}
+
+			foreach my $marker (@markers) {
+				my $phy_name = get_iface_name($marker);
+				$phy_name =~ s/\.\d+$//;
+
+				verbose(3, "Quering physical interface '$phy_name' "
+					. "for $name.");
+
+				my @phy_interfaces = get_interfaces($junos, $phy_name);
+				foreach my $phy_iface (@phy_interfaces) {
+					if (check_interface($phy_iface, $phy_name) == 0) {
+						++$phys_down_count;
+						push @phys_down_ifaces, "$name -> $phy_name";
+					}
+				}
+			}
 		}
 
 		if ($down_count > 0) {
 			$plugin->add_message(CRITICAL, $down_count
 				. " interfaces down (" . join(", ", @down_ifaces) . ")");
+		}
+
+		if ($phys_down_count > 0) {
+			$plugin->add_message(WARNING, $phys_down_count
+				. " LAG member interfaces down ("
+				. join(", ", @phys_down_ifaces) . ")");
+		}
+
+		if ((! $down_count) && (! $phys_down_count)) {
+			if (! scalar(@targets)) {
+				$plugin->add_message(OK, "all interfaces up");
+			}
+			else {
+				$plugin->add_message(OK, "interface"
+					. (scalar(@targets) == 1 ? " " : "s ")
+					. join(", ", @targets) . " up"
+					. ($have_lag_ifaces
+						? " (including all LAG member interfaces)" : ""));
+			}
 		}
 	}
 	elsif ($check->{'name'} eq 'chassis_environment') {
@@ -286,7 +331,7 @@ sub check_interface {
 	}
 
 	$plugin->add_perfdata(
-		label     => "$name-input-bytes",
+		label     => "'$name-input-bytes'",
 		value     => get_iface_traffic($iface, "input"),
 		min       => 0,
 		max       => undef,
@@ -294,7 +339,7 @@ sub check_interface {
 		threshold => undef,
 	);
 	$plugin->add_perfdata(
-		label     => "$name-output-bytes",
+		label     => "'$name-output-bytes'",
 		value     => get_iface_traffic($iface, "output"),
 		min       => 0,
 		max       => undef,
@@ -377,6 +422,26 @@ sub get_iface_traffic
 
 	my $stats = get_obj_element($iface, 'traffic-statistics');
 	return get_obj_element($iface, "$type-bytes");
+}
+
+sub get_iface_first_logical
+{
+	my $iface = shift;
+	return $iface->getElementsByTagName('logical-interface')->item(0);
+}
+
+sub get_liface_marker
+{
+	my $liface = shift;
+
+	my $lag_stats = $liface->getElementsByTagName('lag-traffic-statistics')->item(0);
+	if (! $lag_stats) {
+		print STDERR "Cannot get marker for non-LACP interfaces yet!\n";
+		return;
+	}
+
+	my @markers = $lag_stats->getElementsByTagName('lag-marker');
+	return @markers;
 }
 
 sub add_arg
