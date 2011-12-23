@@ -269,7 +269,9 @@ foreach my $check (@{$conf{'checks'}}) {
 
 		if ((! $down_count) && (! $phys_down_count)) {
 			if (! scalar(@targets)) {
-				$plugin->add_message(OK, "all interfaces up");
+				$plugin->add_message(OK, "all interfaces up"
+					. ($have_lag_ifaces
+						? " (including all LAG member interfaces)" : ""));
 			}
 			else {
 				$plugin->add_message(OK, "interface"
