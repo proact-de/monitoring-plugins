@@ -194,7 +194,17 @@ foreach my $check (@{$conf{'checks'}}) {
 	);
 
 	if ($check->{'name'} eq 'interfaces') {
-		my @interfaces = get_interfaces($junos, @targets);;
+		my $opts = {
+			with_description => 0,
+		};
+
+		if (grep { m/^\@with_description$/; } @targets) {
+			$opts->{'with_description'} = 1;
+
+			@targets = grep { ! m/^\@with_description$/; } @targets;
+		}
+
+		my @interfaces = get_interfaces($junos, $opts, @targets);;
 
 		my $down_count = 0;
 		my @down_ifaces = ();
@@ -206,7 +216,7 @@ foreach my $check (@{$conf{'checks'}}) {
 
 		foreach my $iface (@interfaces) {
 			my $name = get_iface_name($iface);
-			my $status = check_interface($iface, @targets);
+			my $status = check_interface($iface, $opts, @targets);
 
 			if ($status == 0) {
 				++$down_count;
@@ -236,9 +246,9 @@ foreach my $check (@{$conf{'checks'}}) {
 				verbose(3, "Quering physical interface '$phy_name' "
 					. "for $name.");
 
-				my @phy_interfaces = get_interfaces($junos, $phy_name);
+				my @phy_interfaces = get_interfaces($junos, {}, $phy_name);
 				foreach my $phy_iface (@phy_interfaces) {
-					if (check_interface($phy_iface, $phy_name) == 0) {
+					if (check_interface($phy_iface, {}, $phy_name) == 0) {
 						++$phys_down_count;
 						push @phys_down_ifaces, "$name -> $phy_name";
 					}
@@ -314,13 +324,16 @@ sub send_query
 
 sub check_interface {
 	my $iface = shift;
+	my $opts  = shift || {};
 	my @targets = @_;
 
 	my $name = get_iface_name($iface);
 	my $admin_status = get_iface_admin_status($iface);
 
 	if ($admin_status !~ m/^up$/) {
-		if (grep { $name =~ m/^$_$/; } @targets) {
+		if ((grep { $name =~ m/^$_$/; } @targets)
+				|| ($opts->{'with_description'} &&
+					get_iface_description($iface))) {
 			$plugin->add_message(CRITICAL,
 				"$name is not enabled");
 			return -1;
@@ -354,15 +367,17 @@ sub check_interface {
 sub get_interfaces
 {
 	my $device  = shift;
+	my $opts    = shift || {};
 	my @targets = @_;
 	my @ifaces  = ();
+	my @ret     = ();
 
 	my $cmd = 'get_interface_information';
 	my $res;
 
 	my $args = { detail => 1 };
 
-	if (scalar(@targets) == 1) {
+	if ((scalar(@targets) == 1) && (! $opts->{'with_description'})) {
 		$args->{'interface_name'} = $targets[0];
 	}
 	$res = send_query($device, $cmd, $args);
@@ -376,18 +391,31 @@ sub get_interfaces
 	@targets = map { s/\*/\.\*/g; s/\?/\./g; $_; } @targets;
 
 	if (scalar(@targets)) {
-		@ifaces = grep {
+		@ret = grep {
 			my $i = $_;
 			grep { get_iface_name($i) =~ m/^$_$/ } @targets;
 		} @ifaces;
 	}
+	elsif (! $opts->{'with_description'}) {
+		@ret = @ifaces;
+	}
+
+	if ($opts->{'with_description'}) {
+		foreach my $iface (@ifaces) {
+			my $name = get_iface_name($iface);
+			if (get_iface_description($iface)
+					&& (! grep { m/^$name$/; } @targets)) {
+				push @ret, $iface;
+			}
+		}
+	}
 
 	if ($conf{'verbose'} >= 3) {
 		my @i = map { get_iface_name($_) . " => " . get_iface_status($_) }
-			@ifaces;
+			@ret;
 		verbose(3, "Interfaces: " . join(", ", @i));
 	}
-	return @ifaces;
+	return @ret;
 }
 
 sub get_obj_element
@@ -396,6 +424,9 @@ sub get_obj_element
 	my $elem = shift;
 
 	$elem = $obj->getElementsByTagName($elem);
+	if ((! $elem) || (! $elem->item(0))) {
+		return;
+	}
 	return $elem->item(0)->getFirstChild->getNodeValue;
 }
 
@@ -403,6 +434,12 @@ sub get_iface_name
 {
 	my $iface = shift;
 	return get_obj_element($iface, 'name');
+}
+
+sub get_iface_description
+{
+	my $iface = shift;
+	return get_obj_element($iface, 'description');
 }
 
 sub get_iface_status
