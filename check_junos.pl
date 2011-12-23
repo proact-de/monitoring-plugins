@@ -291,7 +291,9 @@ sub send_query
 	my $res;
 	my $err;
 
-	verbose(3, "Sending query '$query' to router.");
+	verbose(3, "Sending query '$query' "
+		. join(", ", map { "$_ => $queryargs->{$_}" } keys %$queryargs)
+		. " to router.");
 
 	if (ref $queryargs) {
 		$res = $device->$query(%$queryargs);
