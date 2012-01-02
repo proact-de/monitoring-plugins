@@ -331,6 +331,27 @@ foreach my $check (@{$conf{'checks'}}) {
 				$plugin->add_message($state, $class . " $name: status " .
 					$status);
 			}
+
+			my $temp = get_object_value_by_spec($item, 'temperature');
+			if (! $temp) {
+				next;
+			}
+
+			($temp) = $temp =~ m/(\d+) degrees C/;
+			if (! defined($temp)) {
+				next;
+			}
+
+			my $label = "$name-temp";
+			$label =~ s/ /_/g;
+			$plugin->add_perfdata(
+				label     => "'$label'",
+				value     => $temp,
+				min       => undef,
+				max       => undef,
+				uom       => '',
+				threshold => undef,
+			);
 		}
 
 		if (! $items_count) {
