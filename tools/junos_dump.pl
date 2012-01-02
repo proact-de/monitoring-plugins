@@ -156,7 +156,7 @@ if ($opt{p}) {
 }
 
 # Get the name of the output file
-my $outfile = $opt{o};
+my $outfile = $opt{o} || 'dump.xml';
 
 # Retrieve command line arguments
 my %deviceinfo = (
@@ -184,7 +184,7 @@ if ($res) {
 		print STDOUT $res->toString;
 	}
 	else {
-		$res->printToFile($outfile || 'dump.xml');
+		$res->printToFile($outfile);
 	}
 }
 
