@@ -46,12 +46,10 @@ use JUNOS::Device;
 
 binmode STDOUT, ":utf8";
 
-my $valid_checks = "interfaces|chassis_environment";
+my $valid_checks = "interfaces|chassis_environment|system_storage";
 
 # TODO:
 # * chassis_routing_engine: show chassis routing-engine (-> number and status)
-#
-# * storage: show system storage
 
 my $plugin = Nagios::Plugin->new(
 	plugin    => 'check_junos',
@@ -85,6 +83,9 @@ The following checks are available:
   * chassis_environment: Check the status of verious system components
     (as provided by 'show chassis environment'). If specified, the thresholds
     will be checked against the temperature of the components.
+
+  * system_storage: Check the amount of used space of system filesystems. The
+    threshold will be checked against the amount (percent) of used space.
 
 Warning and critical thresholds may be specified in the format documented at
 http://nagiosplug.sourceforge.net/developer-guidelines.html#THRESHOLDFORMAT.",
@@ -370,6 +371,41 @@ foreach my $check (@{$conf{'checks'}}) {
 		else {
 			$plugin->add_message(WARNING,
 				"$items_ok / $items_count components OK");
+		}
+	}
+	elsif ($check->{'name'} eq 'system_storage') {
+		my $res = send_query($junos, 'get_system_storage');
+
+		foreach my $re (get_object_by_spec($res,
+				'multi-routing-engine-item')) {
+			my $re_name = get_object_value_by_spec($re, 're-name');
+
+			foreach my $fs (get_object_by_spec($re,
+					['system-storage-information', 'filesystem'])) {
+				my $name = get_object_value_by_spec($fs, 'filesystem-name');
+				my $mnt_pt = get_object_value_by_spec($fs, 'mounted-on');
+
+				if (scalar(@targets) && (! grep { m/^$name$/ } @targets)
+						&& (! grep { m/^$mnt_pt$/ } @targets)) {
+					next;
+				}
+
+				my $used = get_object_value_by_spec($fs, 'used-percent') + 0;
+
+				my $state = $plugin->check_threshold($used);
+				if ($state != OK) {
+					$plugin->add_message($state, "$re_name $mnt_pt: "
+						. "$used\% used");
+				}
+				$plugin->add_perfdata(
+					label     => "'$re_name-$mnt_pt'",
+					value     => $used,
+					min       => 0,
+					max       => 100,
+					uom       => '%',
+					threshold => $plugin->threshold(),
+				);
+			}
 		}
 	}
 }
