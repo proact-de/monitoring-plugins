@@ -83,7 +83,8 @@ The following checks are available:
     be checked as well.
 
   * chassis_environment: Check the status of verious system components
-    (as provided by 'show chassis environment').
+    (as provided by 'show chassis environment'). If specified, the thresholds
+    will be checked against the temperature of the components.
 
 Warning and critical thresholds may be specified in the format documented at
 http://nagiosplug.sourceforge.net/developer-guidelines.html#THRESHOLDFORMAT.",
@@ -340,6 +341,12 @@ foreach my $check (@{$conf{'checks'}}) {
 			($temp) = $temp =~ m/(\d+) degrees C/;
 			if (! defined($temp)) {
 				next;
+			}
+
+			$state = $plugin->check_threshold($temp);
+			if ($state != OK) {
+				$plugin->add_message($state, $class
+					. " $name: ${temp} degrees C");
 			}
 
 			my $label = "$name-temp";
