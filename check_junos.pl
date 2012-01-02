@@ -357,7 +357,7 @@ foreach my $check (@{$conf{'checks'}}) {
 				min       => undef,
 				max       => undef,
 				uom       => '',
-				threshold => undef,
+				threshold => $plugin->threshold(),
 			);
 		}
 
