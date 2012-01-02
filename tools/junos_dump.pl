@@ -88,10 +88,40 @@ sub send_query
 	return $res;
 }
 
+# get object identified by the specified spec
+sub get_object_by_spec
+{
+	my $res  = shift;
+	my $spec = shift;
+
+	my $iter = $res;
+	for (my $i = 0; $i < scalar(@$spec) - 1; ++$i) {
+		my $tmp = $iter->getElementsByTagName($spec->[$i]);
+
+		if ((! $tmp) || (! $tmp->item(0))) {
+			return;
+		}
+
+		$iter = $tmp->item(0);
+	}
+
+	if (wantarray) {
+		my @ret = $iter->getElementsByTagName($spec->[scalar(@$spec) - 1]);
+		return @ret;
+	}
+	else {
+		my $ret = $iter->getElementsByTagName($spec->[scalar(@$spec) - 1]);
+		if ((! $ret) || (! $ret->item(0))) {
+			return;
+		}
+		return $ret->item(0);
+	}
+}
+
 # print the usage of this script
 sub output_usage
 {
-	my $usage = "Usage: $0 [options] <target> <query>
+	my $usage = "Usage: $0 [options] <target> <query> [<arg1>=<value1> [...]]
 
 Where:
 
@@ -103,6 +133,7 @@ Options:
   -l <login>    A login name accepted by the target router.
   -p <password> The password for the login name.
   -m <access>   Access method.  It can be clear-text, ssl, ssh or telnet.  Default: telnet.
+  -s <spec>     Specify a value to extract from the output.
   -o <file>     Output file.  Default: dump.xml.
   -d            Turn on debug, full blast.\n\n";
 
@@ -110,7 +141,7 @@ Options:
 }
 
 my %opt;
-getopts('l:p:dm:x:o:h', \%opt) || output_usage();
+getopts('l:p:dm:x:o:s:h', \%opt) || output_usage();
 output_usage() if $opt{h};
 
 # Check whether trace should be turned on
@@ -178,17 +209,30 @@ unless ( ref $jnx ) {
 	die "ERROR: $deviceinfo{hostname}: failed to connect.\n";
 }
 
+my $spec = $opt{s} || undef;
+if ($spec) {
+	$spec = [ split(",", $spec) ];
+}
+
 my $res = send_query($jnx, $query, scalar(keys %args) ? \%args : undef);
-if ($res) {
+while ($res) {
+	if ($spec) {
+		$res = get_object_by_spec($res, $spec);
+	}
+
+	if (! $res) {
+		print "NO OUTPUT!\n";
+		last;
+	}
+
 	if ($outfile eq "-") {
 		print STDOUT $res->toString;
 	}
 	else {
 		$res->printToFile($outfile);
 	}
+	last;
 }
-
-print "DONE\n";
 
 $jnx->request_end_session();
 $jnx->disconnect();
