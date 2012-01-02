@@ -2,8 +2,8 @@
 
 #############################################################################
 # (c) 2001, 2003 Juniper Networks, Inc.                                     #
-# (c) 2011 Sebastian "tokkee" Harl <sh@teamix.net>                          #
-#          and team(ix) GmbH, Nuernberg, Germany                            #
+# (c) 2011-2012 Sebastian "tokkee" Harl <sh@teamix.net>                     #
+#               and team(ix) GmbH, Nuernberg, Germany                       #
 #                                                                           #
 # This file is part of "team(ix) Monitoring Plugins"                        #
 # URL: http://oss.teamix.org/projects/monitoringplugins/                    #
@@ -39,10 +39,11 @@ use warnings;
 
 use utf8;
 
-use POSIX qw( :termios_h );
-use Nagios::Plugin;
-
 use JUNOS::Device;
+
+use FindBin qw( $Bin );
+use lib "$Bin/perl/lib";
+use Nagios::Plugin::JUNOS;
 
 binmode STDOUT, ":utf8";
 
@@ -51,7 +52,7 @@ my $valid_checks = "interfaces|chassis_environment|system_storage";
 # TODO:
 # * chassis_routing_engine: show chassis routing-engine (-> number and status)
 
-my $plugin = Nagios::Plugin->new(
+my $plugin = Nagios::Plugin::JUNOS->new(
 	plugin    => 'check_junos',
 	shortname => 'check_junos',
 	version   => '0.1',
@@ -91,16 +92,6 @@ Warning and critical thresholds may be specified in the format documented at
 http://nagiosplug.sourceforge.net/developer-guidelines.html#THRESHOLDFORMAT.",
 );
 
-# Predefined arguments (by Nagios::Plugin)
-my @predefined_args = qw(
-	usage
-	help
-	version
-	extra-opts
-	timeout
-	verbose
-);
-
 my @args = (
 	{
 		spec    => 'host|H=s',
@@ -128,59 +119,17 @@ my @args = (
 	},
 );
 
-my %conf  = ();
 my $junos = undef;
 
 foreach my $arg (@args) {
-	add_arg($plugin, $arg);
+	$plugin->add_arg($arg);
 }
 
-$plugin->getopts;
-# Initialize this first, so it may be used right away.
-$conf{'verbose'} = $plugin->opts->verbose;
+$plugin->configure();
+$plugin->add_checks($valid_checks, 'chassis_environment', @ARGV);
+$junos = $plugin->connect();
 
-foreach my $arg (@args) {
-	my @c = get_conf($plugin, $arg);
-	$conf{$c[0]} = $c[1];
-}
-
-foreach my $arg (@predefined_args) {
-	$conf{$arg} = $plugin->opts->$arg;
-}
-
-add_checks(\%conf, @ARGV);
-
-if (! $plugin->opts->password) {
-	my $term = POSIX::Termios->new();
-	my $lflag;
-
-	print "Password: ";
-
-	$term->getattr(fileno(STDIN));
-	$lflag = $term->getlflag;
-	$term->setlflag($lflag & ~POSIX::ECHO);
-	$term->setattr(fileno(STDIN), TCSANOW);
-
-	$conf{'password'} = <STDIN>;
-	chomp($conf{'password'});
-
-	$term->setlflag($lflag | POSIX::ECHO);
-	print "\n";
-}
-
-verbose(1, "Connecting to host $conf{'host'} as user $conf{'user'}.");
-$junos = JUNOS::Device->new(
-	hostname       => $conf{'host'},
-	login          => $conf{'user'},
-	password       => $conf{'password'},
-	access         => 'ssh',
-	'ssh-compress' => 0);
-
-if (! ref $junos) {
-	$plugin->die("ERROR: failed to connect to " . $conf{'host'} . "!");
-}
-
-foreach my $check (@{$conf{'checks'}}) {
+foreach my $check ($plugin->get_checks()) {
 	my $code;
 	my $value;
 
@@ -245,7 +194,7 @@ foreach my $check (@{$conf{'checks'}}) {
 				my $phy_name = get_iface_name($marker);
 				$phy_name =~ s/\.\d+$//;
 
-				verbose(3, "Quering physical interface '$phy_name' "
+				$plugin->verbose(3, "Quering physical interface '$phy_name' "
 					. "for $name.");
 
 				my @phy_interfaces = get_interfaces($junos, {}, $phy_name);
@@ -425,7 +374,7 @@ sub send_query
 	my $res;
 	my $err;
 
-	verbose(3, "Sending query '$query' "
+	$plugin->verbose(3, "Sending query '$query' "
 		. join(", ", map { "$_ => $queryargs->{$_}" } keys %$queryargs)
 		. " to router.");
 
@@ -534,10 +483,10 @@ sub get_interfaces
 		}
 	}
 
-	if ($conf{'verbose'} >= 3) {
+	{
 		my @i = map { get_iface_name($_) . " => " . get_iface_status($_) }
 			@ret;
-		verbose(3, "Interfaces: " . join(", ", @i));
+		$plugin->verbose(3, "Interfaces: " . join(", ", @i));
 	}
 	return @ret;
 }
@@ -667,139 +616,5 @@ sub get_liface_marker
 
 	my @markers = $lag_stats->getElementsByTagName('lag-marker');
 	return @markers;
-}
-
-sub add_arg
-{
-	my $plugin = shift;
-	my $arg    = shift;
-
-	my $spec = $arg->{'spec'};
-	my $help = $arg->{'usage'};
-
-	if (defined $arg->{'desc'}) {
-		my @desc;
-
-		if (ref($arg->{'desc'})) {
-			@desc = @{$arg->{'desc'}};
-		}
-		else {
-			@desc = ( $arg->{'desc'} );
-		}
-
-		foreach my $d (@desc) {
-			$help .= "\n   $d";
-		}
-
-		if (defined $arg->{'default'}) {
-			$help .= " (default: $arg->{'default'})";
-		}
-	}
-	elsif (defined $arg->{'default'}) {
-		$help .= "\n   (default: $arg->{'default'})";
-	}
-
-	$plugin->add_arg(
-		spec => $spec,
-		help => $help,
-	);
-}
-
-sub get_conf
-{
-	my $plugin = shift;
-	my $arg    = shift;
-
-	my ($name, undef) = split(m/\|/, $arg->{'spec'});
-	my $value = $plugin->opts->$name || $arg->{'default'};
-
-	if ($name eq 'password') {
-		verbose(3, "conf: password => "
-			. (($value eq '<prompt>') ? '<prompt>' : '<hidden>'));
-	}
-	else {
-		verbose(3, "conf: $name => $value");
-	}
-	return ($name => $value);
-}
-
-sub add_single_check
-{
-	my $conf  = shift;
-	my @check = split(m/,/, shift);
-
-	my %c = ();
-
-	if ($check[0] !~ m/\b(?:$valid_checks)\b/) {
-		return "ERROR: invalid check '$check[0]'";
-	}
-
-	$c{'name'} = $check[0];
-
-	$c{'target'} = undef;
-	if (defined($check[1])) {
-		$c{'target'} = [ split(m/\+/, $check[1]) ];
-	}
-
-	$c{'warning'}    = $check[2];
-	$c{'critical'}   = $check[3];
-
-	# check for valid thresholds
-	# set_threshold() will die if any threshold is not valid
-	$plugin->set_thresholds(
-		warning  => $c{'warning'},
-		critical => $c{'critical'},
-	) || $plugin->die("ERROR: Invalid thresholds: "
-		. "warning => $c{'warning'}, critical => $c{'critical'}");
-
-	push @{$conf->{'checks'}}, \%c;
-}
-
-sub add_checks
-{
-	my $conf    = shift;
-	my @checks  = @_;
-
-	my $err_str = "ERROR:";
-
-	if (scalar(@checks) == 0) {
-		$conf->{'checks'}[0] = {
-			name     => 'chassis_environment',
-			target   => [],
-			warning  => undef,
-			critical => undef,
-		};
-		return 1;
-	}
-
-	$conf->{'checks'} = [];
-
-	foreach my $check (@checks) {
-		my $e;
-
-		$e = add_single_check($conf, $check);
-		if ($e =~ m/^ERROR: (.*)$/) {
-			$err_str .= " $1,";
-		}
-	}
-
-	if ($err_str ne "ERROR:") {
-		$err_str =~ s/,$//;
-		$plugin->die($err_str);
-	}
-}
-
-sub verbose
-{
-	my $level = shift;
-	my @msgs  = @_;
-
-	if ($level > $conf{'verbose'}) {
-		return;
-	}
-
-	foreach my $msg (@msgs) {
-		print "V$level: $msg\n";
-	}
 }
 
