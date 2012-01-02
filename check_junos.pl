@@ -298,6 +298,12 @@ foreach my $check (@{$conf{'checks'}}) {
 
 		my $class = "";
 		foreach my $item (get_object_by_spec($res, 'environment-item')) {
+			my $name = get_object_value_by_spec($item, 'name');
+
+			if (scalar(@targets) && (! grep { m/^$name$/ } @targets)) {
+				next;
+			}
+
 			if (get_object_value_by_spec($item, 'class')) {
 				$class = get_object_value_by_spec($item, 'class');
 			}
@@ -305,7 +311,10 @@ foreach my $check (@{$conf{'checks'}}) {
 			my $status = get_object_value_by_spec($item, 'status');
 
 			if ($status eq "Absent") {
-				next;
+				if (! scalar(@targets)) {
+					next;
+				}
+				# else: check this component
 			}
 
 			my $state  = UNKNOWN;
@@ -319,9 +328,8 @@ foreach my $check (@{$conf{'checks'}}) {
 				++$items_ok;
 			}
 			else {
-				$plugin->add_message($state, $class . " "
-					. get_object_value_by_spec($item, 'name')
-					. ": status " . $status);
+				$plugin->add_message($state, $class . " $name: status " .
+					$status);
 			}
 		}
 
