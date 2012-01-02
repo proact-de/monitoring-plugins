@@ -283,8 +283,58 @@ foreach my $check (@{$conf{'checks'}}) {
 		}
 	}
 	elsif ($check->{'name'} eq 'chassis_environment') {
-		# XXX
-		#show chassis environment (see check_snmp_environment)
+		my $res = send_query($junos, 'get_environment_information');
+
+		my %status_map = (
+			OK      => OK,
+			Testing => UNKNOWN,
+			Check   => UNKNOWN,
+			Failed  => CRITICAL,
+			Absent  => CRITICAL,
+		);
+
+		my $items_count = 0;
+		my $items_ok    = 0;
+
+		my $class = "";
+		foreach my $item (get_object_by_spec($res, 'environment-item')) {
+			if (get_object_value_by_spec($item, 'class')) {
+				$class = get_object_value_by_spec($item, 'class');
+			}
+
+			my $status = get_object_value_by_spec($item, 'status');
+
+			if ($status eq "Absent") {
+				next;
+			}
+
+			my $state  = UNKNOWN;
+			if (defined $status_map{$status}) {
+				$state = $status_map{$status};
+			}
+
+			++$items_count;
+
+			if ($state == OK) {
+				++$items_ok;
+			}
+			else {
+				$plugin->add_message($state, $class . " "
+					. get_object_value_by_spec($item, 'name')
+					. ": status " . $status);
+			}
+		}
+
+		if (! $items_count) {
+			$plugin->add_message(UNKNOWN, "no components found");
+		}
+		elsif ($items_count == $items_ok) {
+			$plugin->add_message(OK, "$items_ok components OK");
+		}
+		else {
+			$plugin->add_message(WARNING,
+				"$items_ok / $items_count components OK");
+		}
 	}
 }
 
@@ -430,6 +480,68 @@ sub get_obj_element
 		return;
 	}
 	return $elem->item(0)->getFirstChild->getNodeValue;
+}
+
+sub get_object_value
+{
+	my $res = shift;
+
+	if (! $res) {
+		return;
+	}
+
+	if (ref($res) eq "XML::DOM::NodeList") {
+		$res = $res->item(0);
+	}
+
+	return $res->getFirstChild->getNodeValue;
+}
+
+sub get_object_by_spec
+{
+	my $res  = shift;
+	my $spec = shift;
+
+	if (! $res) {
+		return;
+	}
+
+	if (! $spec) {
+		return $res;
+	}
+
+	if (! ref($spec)) {
+		$spec = [ $spec ];
+	}
+
+	my $iter = $res;
+	for (my $i = 0; $i < scalar(@$spec) - 1; ++$i) {
+		my $tmp = $iter->getElementsByTagName($spec->[$i]);
+
+		if ((! $tmp) || (! $tmp->item(0))) {
+			return;
+		}
+
+		$iter = $tmp->item(0);
+	}
+
+	if (wantarray) {
+		my @ret = $iter->getElementsByTagName($spec->[scalar(@$spec) - 1]);
+		return @ret;
+	}
+	else {
+		my $ret = $iter->getElementsByTagName($spec->[scalar(@$spec) - 1]);
+		if ((! $ret) || (! $ret->item(0))) {
+			return;
+		}
+		return $ret->item(0);
+	}
+}
+
+sub get_object_value_by_spec
+{
+	my $res = get_object_by_spec(@_);
+	return get_object_value($res);
 }
 
 sub get_iface_name
