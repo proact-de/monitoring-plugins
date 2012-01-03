@@ -419,6 +419,8 @@ sub check_system_storage
 
 	my $res = $plugin->send_query('get_system_storage');
 
+	my $all_ok = 1;
+
 	foreach my $re ($plugin->get_query_object($res,
 			'multi-routing-engine-item')) {
 		my $re_name = $plugin->get_query_object_value($re, 're-name');
@@ -437,6 +439,7 @@ sub check_system_storage
 
 			my $state = $plugin->check_threshold($used);
 			if ($state != OK) {
+				$all_ok = 0;
 				$plugin->add_message($state, "$re_name $mnt_pt: "
 					. "$used\% used");
 			}
@@ -449,6 +452,10 @@ sub check_system_storage
 				threshold => $plugin->threshold(),
 			);
 		}
+	}
+
+	if ($all_ok) {
+		$plugin->add_message(OK, "all filesystems within thresholds");
 	}
 }
 
