@@ -155,13 +155,13 @@ sub check_interface
 	my $opts    = shift || {};
 	my @targets = @_;
 
-	my $name = get_object_value_by_spec($iface, 'name');
-	my $admin_status = get_object_value_by_spec($iface, 'admin-status');
+	my $name = $plugin->get_query_object_value($iface, 'name');
+	my $admin_status = $plugin->get_query_object_value($iface, 'admin-status');
 
 	if ($admin_status !~ m/^up$/) {
 		if ((grep { $name =~ m/^$_$/; } @targets)
 				|| ($opts->{'with_description'} &&
-					get_object_value_by_spec($iface, 'description'))) {
+					$plugin->get_query_object_value($iface, 'description'))) {
 			$plugin->add_message(CRITICAL,
 				"$name is not enabled");
 			return -1;
@@ -169,13 +169,13 @@ sub check_interface
 		return 1;
 	}
 
-	if (get_object_value_by_spec($iface, 'oper-status') !~ m/^up$/i) {
+	if ($plugin->get_query_object_value($iface, 'oper-status') !~ m/^up$/i) {
 		return 0;
 	}
 
 	$plugin->add_perfdata(
 		label     => "'$name-input-bytes'",
-		value     => get_object_value_by_spec($iface,
+		value     => $plugin->get_query_object_value($iface,
 				['traffic-statistics', 'input-bytes']),
 		min       => 0,
 		max       => undef,
@@ -184,7 +184,7 @@ sub check_interface
 	);
 	$plugin->add_perfdata(
 		label     => "'$name-output-bytes'",
-		value     => get_object_value_by_spec($iface,
+		value     => $plugin->get_query_object_value($iface,
 				['traffic-statistics', 'output-bytes']),
 		min       => 0,
 		max       => undef,
@@ -196,9 +196,10 @@ sub check_interface
 
 sub get_interfaces
 {
-	my $device  = shift;
+	my $plugin  = shift;
 	my $opts    = shift || {};
 	my @targets = @_;
+
 	my @ifaces  = ();
 	my @ret     = ();
 
@@ -223,7 +224,7 @@ sub get_interfaces
 	if (scalar(@targets)) {
 		@ret = grep {
 			my $i = $_;
-			grep { get_object_value_by_spec($i, 'name') =~ m/^$_$/ } @targets;
+			grep { $plugin->get_query_object_value($i, 'name') =~ m/^$_$/ } @targets;
 		} @ifaces;
 	}
 	elsif (! $opts->{'with_description'}) {
@@ -232,8 +233,8 @@ sub get_interfaces
 
 	if ($opts->{'with_description'}) {
 		foreach my $iface (@ifaces) {
-			my $name = get_object_value_by_spec($iface, 'name');
-			if (get_object_value_by_spec($iface, 'description')
+			my $name = $plugin->get_query_object_value($iface, 'name');
+			if ($plugin->get_query_object_value($iface, 'description')
 					&& (! grep { m/^$name$/; } @targets)) {
 				push @ret, $iface;
 			}
@@ -241,67 +242,11 @@ sub get_interfaces
 	}
 
 	{
-		my @i = map { get_object_value_by_spec($_, 'name'). " => "
-			. get_object_value_by_spec($_, 'oper-status') } @ret;
+		my @i = map { $plugin->get_query_object_value($_, 'name'). " => "
+			. $plugin->get_query_object_value($_, 'oper-status') } @ret;
 		$plugin->verbose(3, "Interfaces: " . join(", ", @i));
 	}
 	return @ret;
-}
-
-sub get_object_by_spec
-{
-	my $res  = shift;
-	my $spec = shift;
-
-	if (! $res) {
-		return;
-	}
-
-	if (! $spec) {
-		return $res;
-	}
-
-	if (! ref($spec)) {
-		$spec = [ $spec ];
-	}
-
-	my $iter = $res;
-	for (my $i = 0; $i < scalar(@$spec) - 1; ++$i) {
-		my $tmp = $iter->getElementsByTagName($spec->[$i]);
-
-		if ((! $tmp) || (! $tmp->item(0))) {
-			return;
-		}
-
-		$iter = $tmp->item(0);
-	}
-
-	if (wantarray) {
-		my @ret = $iter->getElementsByTagName($spec->[scalar(@$spec) - 1]);
-		return @ret;
-	}
-	else {
-		my $ret = $iter->getElementsByTagName($spec->[scalar(@$spec) - 1]);
-		if ((! $ret) || (! $ret->item(0))) {
-			return;
-		}
-		return $ret->item(0);
-	}
-}
-
-sub get_object_value_by_spec
-{
-	my $res = get_object_by_spec(@_);
-
-	if (! $res) {
-		return;
-	}
-
-	if (ref($res) eq "XML::DOM::NodeList") {
-		$res = $res->item(0);
-	}
-
-	return $res->getFirstChild->getNodeValue;
 }
 
 sub check_interfaces
@@ -320,7 +265,7 @@ sub check_interfaces
 		@targets = grep { ! m/^\@with_description$/; } @targets;
 	}
 
-	my @interfaces = get_interfaces($junos, $opts, @targets);;
+	my @interfaces = get_interfaces($plugin, $opts, @targets);;
 
 	my $down_count = 0;
 	my @down_ifaces = ();
@@ -331,7 +276,7 @@ sub check_interfaces
 	my $have_lag_ifaces = 0;
 
 	foreach my $iface (@interfaces) {
-		my $name = get_object_value_by_spec($iface, 'name');
+		my $name = $plugin->get_query_object_value($iface, 'name');
 		my $status = check_interface($plugin, $iface, $opts, @targets);
 
 		if ($status == 0) {
@@ -350,7 +295,7 @@ sub check_interfaces
 
 		$have_lag_ifaces = 1;
 
-		my @markers = get_object_by_spec($iface,
+		my @markers = $plugin->get_query_object($iface,
 			['logical-interface', 'lag-traffic-statistics', 'lag-marker']);
 
 		if (! @markers) {
@@ -359,13 +304,13 @@ sub check_interfaces
 		}
 
 		foreach my $marker (@markers) {
-			my $phy_name = get_object_value_by_spec($marker, 'name');
+			my $phy_name = $plugin->get_query_object_value($marker, 'name');
 			$phy_name =~ s/\.\d+$//;
 
 			$plugin->verbose(3, "Quering physical interface '$phy_name' "
 				. "for $name.");
 
-			my @phy_interfaces = get_interfaces($junos, {}, $phy_name);
+			my @phy_interfaces = get_interfaces($plugin, {}, $phy_name);
 			foreach my $phy_iface (@phy_interfaces) {
 				if (check_interface($plugin, $phy_iface, {}, $phy_name) == 0) {
 					++$phys_down_count;
@@ -422,18 +367,18 @@ sub check_chassis_environment
 	my $items_ok    = 0;
 
 	my $class = "";
-	foreach my $item (get_object_by_spec($res, 'environment-item')) {
-		my $name = get_object_value_by_spec($item, 'name');
+	foreach my $item ($plugin->get_query_object($res, 'environment-item')) {
+		my $name = $plugin->get_query_object_value($item, 'name');
 
 		if (scalar(@targets) && (! grep { m/^$name$/ } @targets)) {
 			next;
 		}
 
-		if (get_object_value_by_spec($item, 'class')) {
-			$class = get_object_value_by_spec($item, 'class');
+		if ($plugin->get_query_object_value($item, 'class')) {
+			$class = $plugin->get_query_object_value($item, 'class');
 		}
 
-		my $status = get_object_value_by_spec($item, 'status');
+		my $status = $plugin->get_query_object_value($item, 'status');
 
 		if ($status eq "Absent") {
 			if (! scalar(@targets)) {
@@ -457,7 +402,7 @@ sub check_chassis_environment
 				$status);
 		}
 
-		my $temp = get_object_value_by_spec($item, 'temperature');
+		my $temp = $plugin->get_query_object_value($item, 'temperature');
 		if (! $temp) {
 			next;
 		}
@@ -505,21 +450,21 @@ sub check_system_storage
 
 	my $res = $plugin->send_query('get_system_storage');
 
-	foreach my $re (get_object_by_spec($res,
+	foreach my $re ($plugin->get_query_object($res,
 			'multi-routing-engine-item')) {
-		my $re_name = get_object_value_by_spec($re, 're-name');
+		my $re_name = $plugin->get_query_object_value($re, 're-name');
 
-		foreach my $fs (get_object_by_spec($re,
+		foreach my $fs ($plugin->get_query_object($re,
 				['system-storage-information', 'filesystem'])) {
-			my $name = get_object_value_by_spec($fs, 'filesystem-name');
-			my $mnt_pt = get_object_value_by_spec($fs, 'mounted-on');
+			my $name = $plugin->get_query_object_value($fs, 'filesystem-name');
+			my $mnt_pt = $plugin->get_query_object_value($fs, 'mounted-on');
 
 			if (scalar(@targets) && (! grep { m/^$name$/ } @targets)
 					&& (! grep { m/^$mnt_pt$/ } @targets)) {
 				next;
 			}
 
-			my $used = get_object_value_by_spec($fs, 'used-percent') + 0;
+			my $used = $plugin->get_query_object_value($fs, 'used-percent') + 0;
 
 			my $state = $plugin->check_threshold($used);
 			if ($state != OK) {

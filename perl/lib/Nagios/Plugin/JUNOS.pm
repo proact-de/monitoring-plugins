@@ -380,6 +380,64 @@ sub send_query
 	return $res;
 }
 
+sub get_query_object
+{
+	my $self = shift;
+	my $res  = shift;
+	my $spec = shift;
+
+	if (! $res) {
+		return;
+	}
+
+	if (! $spec) {
+		return $res;
+	}
+
+	if (! ref($spec)) {
+		$spec = [ $spec ];
+	}
+
+	my $iter = $res;
+	for (my $i = 0; $i < scalar(@$spec) - 1; ++$i) {
+		my $tmp = $iter->getElementsByTagName($spec->[$i]);
+
+		if ((! $tmp) || (! $tmp->item(0))) {
+			return;
+		}
+
+		$iter = $tmp->item(0);
+	}
+
+	if (wantarray) {
+		my @ret = $iter->getElementsByTagName($spec->[scalar(@$spec) - 1]);
+		return @ret;
+	}
+	else {
+		my $ret = $iter->getElementsByTagName($spec->[scalar(@$spec) - 1]);
+		if ((! $ret) || (! $ret->item(0))) {
+			return;
+		}
+		return $ret->item(0);
+	}
+}
+
+sub get_query_object_value
+{
+	my $self = shift;
+	my $res  = $self->get_query_object(@_);
+
+	if (! $res) {
+		return;
+	}
+
+	if (ref($res) eq "XML::DOM::NodeList") {
+		$res = $res->item(0);
+	}
+
+	return $res->getFirstChild->getNodeValue;
+}
+
 sub verbose
 {
 	my $self  = shift;
