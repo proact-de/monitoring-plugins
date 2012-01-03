@@ -74,16 +74,19 @@ checkname[,target[,warning[,critical]]]
 
 The following checks are available:
   * interfaces: Status of interfaces. If a target is specified, only the
-    specified interface is taken into account.
+    specified interface(s) will be taken into account.
 
     If an aggregated interface is encountered, the physical interfaces will
     be checked as well.
 
   * chassis_environment: Check the status of verious system components
-    (as provided by 'show chassis environment'). If specified, the thresholds
-    will be checked against the temperature of the components.
+    (as provided by 'show chassis environment'). If a target is specified,
+    only the specified component(s) will be taken into account. If specified,
+    the thresholds will be checked against the temperature of the components.
 
-  * system_storage: Check the amount of used space of system filesystems. The
+  * system_storage: Check the amount of used space of system filesystems. If a
+    target is specified, only the specified filesystem(s) will be taken into
+    account (specified either by filesystem name or mount point). The
     threshold will be checked against the amount (percent) of used space.
 
 Warning and critical thresholds may be specified in the format documented at
