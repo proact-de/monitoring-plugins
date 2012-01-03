@@ -290,13 +290,16 @@ sub check_interfaces
 	}
 
 	if ($down_count > 0) {
-		$plugin->add_message(CRITICAL, $down_count
-			. " interfaces down (" . join(", ", @down_ifaces) . ")");
+		$plugin->add_message(CRITICAL, $down_count . " interface"
+			. ($down_count == 1 ? "" : "s")
+			. " down (" . join(", ", @down_ifaces) . ")");
 	}
 
 	if ($phys_down_count > 0) {
 		$plugin->add_message(WARNING, $phys_down_count
-			. " LAG member interfaces down ("
+			. " LAG member interface"
+			. ($phys_down_count == 1 ? "" : "s")
+			. " down ("
 			. join(", ", @phys_down_ifaces) . ")");
 	}
 
@@ -403,7 +406,9 @@ sub check_chassis_environment
 		$plugin->add_message(WARNING, "no components found");
 	}
 	elsif ($items_count == $items_ok) {
-		$plugin->add_message(OK, "$items_ok components OK");
+		$plugin->add_message(OK, "$items_ok component"
+			. ($items_ok == 1 ? "" : "s")
+			. " OK");
 	}
 	else {
 		$plugin->add_message(WARNING,
