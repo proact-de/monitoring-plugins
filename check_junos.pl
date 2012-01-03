@@ -90,33 +90,6 @@ Warning and critical thresholds may be specified in the format documented at
 http://nagiosplug.sourceforge.net/developer-guidelines.html#THRESHOLDFORMAT.",
 );
 
-my @args = (
-	{
-		spec    => 'host|H=s',
-		usage   => '-H, --host=HOSTNAME',
-		desc    => 'Hostname/IP of Juniper box to connect to',
-		default => 'localhost',
-	},
-	{
-		spec    => 'port|p=i',
-		usage   => '-p, --port=PORT',
-		desc    => 'Port to connect to',
-		default => 22,
-	},
-	{
-		spec    => 'user|U=s',
-		usage   => '-U, --user=USERNAME',
-		desc    => 'Username to log into box as',
-		default => 'root',
-	},
-	{
-		spec    => 'password|P=s',
-		usage   => '-P, --password=PASSWORD',
-		desc    => 'Password for login username',
-		default => '<prompt>',
-	},
-);
-
 my %checks = (
 	interfaces          => \&check_interfaces,
 	chassis_environment => \&check_chassis_environment,
@@ -125,9 +98,7 @@ my %checks = (
 
 my $junos = undef;
 
-foreach my $arg (@args) {
-	$plugin->add_arg($arg);
-}
+$plugin->add_common_args();
 
 foreach my $check (keys %checks) {
 	$plugin->add_check_impl($check, $checks{$check});

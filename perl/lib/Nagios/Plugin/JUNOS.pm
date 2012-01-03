@@ -1,6 +1,6 @@
 #############################################################################
-# (c) 2012 Sebastian "tokkee" Harl <sh@teamix.net>                          #
-#          and team(ix) GmbH, Nuernberg, Germany                            #
+# (c) 2011-2012 Sebastian "tokkee" Harl <sh@teamix.net>                     #
+#               and team(ix) GmbH, Nuernberg, Germany                       #
 #                                                                           #
 # This file is part of "team(ix) Monitoring Plugins"                        #
 # URL: http://oss.teamix.org/projects/monitoringplugins/                    #
@@ -105,6 +105,42 @@ sub add_arg
 		spec => $spec,
 		help => $help,
 	);
+}
+
+sub add_common_args
+{
+	my $self = shift;
+
+	my @args = (
+		{
+			spec    => 'host|H=s',
+			usage   => '-H, --host=HOSTNAME',
+			desc    => 'Hostname/IP of Juniper box to connect to',
+			default => 'localhost',
+		},
+		{
+			spec    => 'port|p=i',
+			usage   => '-p, --port=PORT',
+			desc    => 'Port to connect to',
+			default => 22,
+		},
+		{
+			spec    => 'user|U=s',
+			usage   => '-U, --user=USERNAME',
+			desc    => 'Username to log into box as',
+			default => 'root',
+		},
+		{
+			spec    => 'password|P=s',
+			usage   => '-P, --password=PASSWORD',
+			desc    => 'Password for login username',
+			default => '<prompt>',
+		},
+	);
+
+	foreach my $arg (@args) {
+		$self->add_arg($arg);
+	}
 }
 
 sub add_check_impl
