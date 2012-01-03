@@ -400,7 +400,7 @@ sub check_chassis_environment
 	}
 
 	if (! $items_count) {
-		$plugin->add_message(UNKNOWN, "no components found");
+		$plugin->add_message(WARNING, "no components found");
 	}
 	elsif ($items_count == $items_ok) {
 		$plugin->add_message(OK, "$items_ok components OK");
