@@ -390,7 +390,7 @@ sub send_query
 {
 	my $self      = shift;
 	my $query     = shift;
-	my $queryargs = shift;
+	my $queryargs = shift || {};
 
 	my $res;
 	my $err;
@@ -399,10 +399,15 @@ sub send_query
 		. join(", ", map { "$_ => $queryargs->{$_}" } keys %$queryargs)
 		. " to router.");
 
-	if (ref $queryargs) {
+	if (scalar(keys %$queryargs)) {
 		$res = $self->{'junos'}->$query(%$queryargs);
 	} else {
-		$res = $self->{'junos'}->$query();
+		eval {
+			$res = $self->{'junos'}->$query();
+		};
+		if ($@) {
+			$res = $self->{'junos'}->command($query);
+		}
 	}
 
 	if (! ref $res) {
