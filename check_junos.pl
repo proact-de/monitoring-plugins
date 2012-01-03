@@ -301,7 +301,7 @@ sub check_interfaces
 	}
 
 	if ((! $down_count) && (! $phys_down_count)) {
-		if (! scalar(@targets)) {
+		if ((! scalar(@targets)) || $opts->{'with_description'}) {
 			$plugin->add_message(OK, "all interfaces up"
 				. ($have_lag_ifaces
 					? " (including all LAG member interfaces)" : ""));
