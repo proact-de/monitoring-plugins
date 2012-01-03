@@ -33,6 +33,8 @@
 
 package Nagios::Plugin::JUNOS;
 
+use Carp;
+
 use POSIX qw( :termios_h );
 
 use Nagios::Plugin;
@@ -193,6 +195,10 @@ sub set_checks
 
 	my $err_str = "ERROR:";
 
+	if (! defined($self->{'conf'}->{'timeout'})) {
+		croak "No timeout set -- did you call configure()?";
+	}
+
 	if (scalar(@checks) == 0) {
 		$self->{'conf'}->{'checks'}[0] = {
 			name     => $default,
@@ -232,6 +238,10 @@ sub connect
 
 	my $host = $self->{'conf'}->{'host'};
 	my $user = $self->{'conf'}->{'user'};
+
+	if ((! $host) || (! $user)) {
+		croak "Host and/or user not set -- did you call configure()?";
+	}
 
 	if (! $self->opts->password) {
 		my $term = POSIX::Termios->new();
