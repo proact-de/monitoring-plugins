@@ -130,9 +130,6 @@ $plugin->set_checks($valid_checks, 'chassis_environment', @ARGV);
 $junos = $plugin->connect();
 
 foreach my $check ($plugin->get_checks()) {
-	my $code;
-	my $value;
-
 	my @targets = ();
 
 	if (defined $check->{'target'}) {
@@ -145,217 +142,13 @@ foreach my $check ($plugin->get_checks()) {
 	);
 
 	if ($check->{'name'} eq 'interfaces') {
-		my $opts = {
-			with_description => 0,
-		};
-
-		if (grep { m/^\@with_description$/; } @targets) {
-			$opts->{'with_description'} = 1;
-
-			@targets = grep { ! m/^\@with_description$/; } @targets;
-		}
-
-		my @interfaces = get_interfaces($junos, $opts, @targets);;
-
-		my $down_count = 0;
-		my @down_ifaces = ();
-
-		my $phys_down_count = 0;
-		my @phys_down_ifaces = ();
-
-		my $have_lag_ifaces = 0;
-
-		foreach my $iface (@interfaces) {
-			my $name = get_iface_name($iface);
-			my $status = check_interface($iface, $opts, @targets);
-
-			if ($status == 0) {
-				++$down_count;
-				push @down_ifaces, $name;
-			}
-
-			if ($status <= 0) {
-				# disabled or down
-				next;
-			}
-
-			if ($name !~ m/^ae/) {
-				next;
-			}
-
-			$have_lag_ifaces = 1;
-
-			my @markers = get_liface_marker(get_iface_first_logical($iface));
-			if (! @markers) {
-				next;
-			}
-
-			foreach my $marker (@markers) {
-				my $phy_name = get_iface_name($marker);
-				$phy_name =~ s/\.\d+$//;
-
-				$plugin->verbose(3, "Quering physical interface '$phy_name' "
-					. "for $name.");
-
-				my @phy_interfaces = get_interfaces($junos, {}, $phy_name);
-				foreach my $phy_iface (@phy_interfaces) {
-					if (check_interface($phy_iface, {}, $phy_name) == 0) {
-						++$phys_down_count;
-						push @phys_down_ifaces, "$name -> $phy_name";
-					}
-				}
-			}
-		}
-
-		if ($down_count > 0) {
-			$plugin->add_message(CRITICAL, $down_count
-				. " interfaces down (" . join(", ", @down_ifaces) . ")");
-		}
-
-		if ($phys_down_count > 0) {
-			$plugin->add_message(WARNING, $phys_down_count
-				. " LAG member interfaces down ("
-				. join(", ", @phys_down_ifaces) . ")");
-		}
-
-		if ((! $down_count) && (! $phys_down_count)) {
-			if (! scalar(@targets)) {
-				$plugin->add_message(OK, "all interfaces up"
-					. ($have_lag_ifaces
-						? " (including all LAG member interfaces)" : ""));
-			}
-			else {
-				$plugin->add_message(OK, "interface"
-					. (scalar(@targets) == 1 ? " " : "s ")
-					. join(", ", @targets) . " up"
-					. ($have_lag_ifaces
-						? " (including all LAG member interfaces)" : ""));
-			}
-		}
+		check_interfaces(@targets);
 	}
 	elsif ($check->{'name'} eq 'chassis_environment') {
-		my $res = send_query($junos, 'get_environment_information');
-
-		my %status_map = (
-			OK      => OK,
-			Testing => UNKNOWN,
-			Check   => UNKNOWN,
-			Failed  => CRITICAL,
-			Absent  => CRITICAL,
-		);
-
-		my $items_count = 0;
-		my $items_ok    = 0;
-
-		my $class = "";
-		foreach my $item (get_object_by_spec($res, 'environment-item')) {
-			my $name = get_object_value_by_spec($item, 'name');
-
-			if (scalar(@targets) && (! grep { m/^$name$/ } @targets)) {
-				next;
-			}
-
-			if (get_object_value_by_spec($item, 'class')) {
-				$class = get_object_value_by_spec($item, 'class');
-			}
-
-			my $status = get_object_value_by_spec($item, 'status');
-
-			if ($status eq "Absent") {
-				if (! scalar(@targets)) {
-					next;
-				}
-				# else: check this component
-			}
-
-			my $state  = UNKNOWN;
-			if (defined $status_map{$status}) {
-				$state = $status_map{$status};
-			}
-
-			++$items_count;
-
-			if ($state == OK) {
-				++$items_ok;
-			}
-			else {
-				$plugin->add_message($state, $class . " $name: status " .
-					$status);
-			}
-
-			my $temp = get_object_value_by_spec($item, 'temperature');
-			if (! $temp) {
-				next;
-			}
-
-			($temp) = $temp =~ m/(\d+) degrees C/;
-			if (! defined($temp)) {
-				next;
-			}
-
-			$state = $plugin->check_threshold($temp);
-			if ($state != OK) {
-				$plugin->add_message($state, $class
-					. " $name: ${temp} degrees C");
-			}
-
-			my $label = "$name-temp";
-			$label =~ s/ /_/g;
-			$plugin->add_perfdata(
-				label     => "'$label'",
-				value     => $temp,
-				min       => undef,
-				max       => undef,
-				uom       => '',
-				threshold => $plugin->threshold(),
-			);
-		}
-
-		if (! $items_count) {
-			$plugin->add_message(UNKNOWN, "no components found");
-		}
-		elsif ($items_count == $items_ok) {
-			$plugin->add_message(OK, "$items_ok components OK");
-		}
-		else {
-			$plugin->add_message(WARNING,
-				"$items_ok / $items_count components OK");
-		}
+		check_chassis_environment(@targets);
 	}
 	elsif ($check->{'name'} eq 'system_storage') {
-		my $res = send_query($junos, 'get_system_storage');
-
-		foreach my $re (get_object_by_spec($res,
-				'multi-routing-engine-item')) {
-			my $re_name = get_object_value_by_spec($re, 're-name');
-
-			foreach my $fs (get_object_by_spec($re,
-					['system-storage-information', 'filesystem'])) {
-				my $name = get_object_value_by_spec($fs, 'filesystem-name');
-				my $mnt_pt = get_object_value_by_spec($fs, 'mounted-on');
-
-				if (scalar(@targets) && (! grep { m/^$name$/ } @targets)
-						&& (! grep { m/^$mnt_pt$/ } @targets)) {
-					next;
-				}
-
-				my $used = get_object_value_by_spec($fs, 'used-percent') + 0;
-
-				my $state = $plugin->check_threshold($used);
-				if ($state != OK) {
-					$plugin->add_message($state, "$re_name $mnt_pt: "
-						. "$used\% used");
-				}
-				$plugin->add_perfdata(
-					label     => "'$re_name-$mnt_pt'",
-					value     => $used,
-					min       => 0,
-					max       => 100,
-					uom       => '%',
-					threshold => $plugin->threshold(),
-				);
-			}
-		}
+		check_system_storage(@targets);
 	}
 }
 
@@ -616,5 +409,230 @@ sub get_liface_marker
 
 	my @markers = $lag_stats->getElementsByTagName('lag-marker');
 	return @markers;
+}
+
+sub check_interfaces
+{
+	my @targets = @_;
+
+	my $opts = {
+		with_description => 0,
+	};
+
+	if (grep { m/^\@with_description$/; } @targets) {
+		$opts->{'with_description'} = 1;
+
+		@targets = grep { ! m/^\@with_description$/; } @targets;
+	}
+
+	my @interfaces = get_interfaces($junos, $opts, @targets);;
+
+	my $down_count = 0;
+	my @down_ifaces = ();
+
+	my $phys_down_count = 0;
+	my @phys_down_ifaces = ();
+
+	my $have_lag_ifaces = 0;
+
+	foreach my $iface (@interfaces) {
+		my $name = get_iface_name($iface);
+		my $status = check_interface($iface, $opts, @targets);
+
+		if ($status == 0) {
+			++$down_count;
+			push @down_ifaces, $name;
+		}
+
+		if ($status <= 0) {
+			# disabled or down
+			next;
+		}
+
+		if ($name !~ m/^ae/) {
+			next;
+		}
+
+		$have_lag_ifaces = 1;
+
+		my @markers = get_liface_marker(get_iface_first_logical($iface));
+		if (! @markers) {
+			next;
+		}
+
+		foreach my $marker (@markers) {
+			my $phy_name = get_iface_name($marker);
+			$phy_name =~ s/\.\d+$//;
+
+			$plugin->verbose(3, "Quering physical interface '$phy_name' "
+				. "for $name.");
+
+			my @phy_interfaces = get_interfaces($junos, {}, $phy_name);
+			foreach my $phy_iface (@phy_interfaces) {
+				if (check_interface($phy_iface, {}, $phy_name) == 0) {
+					++$phys_down_count;
+					push @phys_down_ifaces, "$name -> $phy_name";
+				}
+			}
+		}
+	}
+
+	if ($down_count > 0) {
+		$plugin->add_message(CRITICAL, $down_count
+			. " interfaces down (" . join(", ", @down_ifaces) . ")");
+	}
+
+	if ($phys_down_count > 0) {
+		$plugin->add_message(WARNING, $phys_down_count
+			. " LAG member interfaces down ("
+			. join(", ", @phys_down_ifaces) . ")");
+	}
+
+	if ((! $down_count) && (! $phys_down_count)) {
+		if (! scalar(@targets)) {
+			$plugin->add_message(OK, "all interfaces up"
+				. ($have_lag_ifaces
+					? " (including all LAG member interfaces)" : ""));
+		}
+		else {
+			$plugin->add_message(OK, "interface"
+				. (scalar(@targets) == 1 ? " " : "s ")
+				. join(", ", @targets) . " up"
+				. ($have_lag_ifaces
+					? " (including all LAG member interfaces)" : ""));
+		}
+	}
+}
+
+sub check_chassis_environment
+{
+	my @targets = @_;
+
+	my $res = send_query($junos, 'get_environment_information');
+
+	my %status_map = (
+		OK      => OK,
+		Testing => UNKNOWN,
+		Check   => UNKNOWN,
+		Failed  => CRITICAL,
+		Absent  => CRITICAL,
+	);
+
+	my $items_count = 0;
+	my $items_ok    = 0;
+
+	my $class = "";
+	foreach my $item (get_object_by_spec($res, 'environment-item')) {
+		my $name = get_object_value_by_spec($item, 'name');
+
+		if (scalar(@targets) && (! grep { m/^$name$/ } @targets)) {
+			next;
+		}
+
+		if (get_object_value_by_spec($item, 'class')) {
+			$class = get_object_value_by_spec($item, 'class');
+		}
+
+		my $status = get_object_value_by_spec($item, 'status');
+
+		if ($status eq "Absent") {
+			if (! scalar(@targets)) {
+				next;
+			}
+			# else: check this component
+		}
+
+		my $state  = UNKNOWN;
+		if (defined $status_map{$status}) {
+			$state = $status_map{$status};
+		}
+
+		++$items_count;
+
+		if ($state == OK) {
+			++$items_ok;
+		}
+		else {
+			$plugin->add_message($state, $class . " $name: status " .
+				$status);
+		}
+
+		my $temp = get_object_value_by_spec($item, 'temperature');
+		if (! $temp) {
+			next;
+		}
+
+		($temp) = $temp =~ m/(\d+) degrees C/;
+		if (! defined($temp)) {
+			next;
+		}
+
+		$state = $plugin->check_threshold($temp);
+		if ($state != OK) {
+			$plugin->add_message($state, $class
+				. " $name: ${temp} degrees C");
+		}
+
+		my $label = "$name-temp";
+		$label =~ s/ /_/g;
+		$plugin->add_perfdata(
+			label     => "'$label'",
+			value     => $temp,
+			min       => undef,
+			max       => undef,
+			uom       => '',
+			threshold => $plugin->threshold(),
+		);
+	}
+
+	if (! $items_count) {
+		$plugin->add_message(UNKNOWN, "no components found");
+	}
+	elsif ($items_count == $items_ok) {
+		$plugin->add_message(OK, "$items_ok components OK");
+	}
+	else {
+		$plugin->add_message(WARNING,
+			"$items_ok / $items_count components OK");
+	}
+}
+
+sub check_system_storage
+{
+	my @targets = @_;
+
+	my $res = send_query($junos, 'get_system_storage');
+
+	foreach my $re (get_object_by_spec($res,
+			'multi-routing-engine-item')) {
+		my $re_name = get_object_value_by_spec($re, 're-name');
+
+		foreach my $fs (get_object_by_spec($re,
+				['system-storage-information', 'filesystem'])) {
+			my $name = get_object_value_by_spec($fs, 'filesystem-name');
+			my $mnt_pt = get_object_value_by_spec($fs, 'mounted-on');
+
+			if (scalar(@targets) && (! grep { m/^$name$/ } @targets)
+					&& (! grep { m/^$mnt_pt$/ } @targets)) {
+				next;
+			}
+
+			my $used = get_object_value_by_spec($fs, 'used-percent') + 0;
+
+			my $state = $plugin->check_threshold($used);
+			if ($state != OK) {
+				$plugin->add_message($state, "$re_name $mnt_pt: "
+					. "$used\% used");
+			}
+			$plugin->add_perfdata(
+				label     => "'$re_name-$mnt_pt'",
+				value     => $used,
+				min       => 0,
+				max       => 100,
+				uom       => '%',
+				threshold => $plugin->threshold(),
+			);
+		}
+	}
 }
 
