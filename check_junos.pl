@@ -79,6 +79,13 @@ The following checks are available:
     If an aggregated interface is encountered, the physical interfaces will
     be checked as well.
 
+  * interface_forwarding: Check the forwarding state of interfaces as provided
+    by 'show ethernet-switching interfaces'. Storm control, MAC limit and
+    BPDUs will be considered CRITICAL states. If a target is specified, only
+    the specified interface(s) will be taken into account. Targets may be
+    specified as <interface_name>:<forwarding_state> in which case a CRITICAL
+    state is assumed if the specified interface is not in the specified state.
+
   * chassis_environment: Check the status of verious system components
     (as provided by 'show chassis environment'). If a target is specified,
     only the specified component(s) will be taken into account. If specified,
@@ -94,9 +101,10 @@ http://nagiosplug.sourceforge.net/developer-guidelines.html#THRESHOLDFORMAT.",
 );
 
 my %checks = (
-	interfaces          => \&check_interfaces,
-	chassis_environment => \&check_chassis_environment,
-	system_storage      => \&check_system_storage,
+	interfaces           => \&check_interfaces,
+	interface_forwarding => \&check_interface_forwarding,
+	chassis_environment  => \&check_chassis_environment,
+	system_storage       => \&check_system_storage,
 );
 
 my $junos = undef;
@@ -319,6 +327,66 @@ sub check_interfaces
 				. ($have_lag_ifaces
 					? " (including all LAG member interfaces)" : ""));
 		}
+	}
+}
+
+sub check_interface_forwarding
+{
+	my $plugin  = shift;
+	my $junos   = shift;
+	my @targets = @_;
+
+	my $res = $plugin->send_query('show ethernet-switching interfaces brief');
+
+	my %critical_map = (
+		'Disabled by bpdu-control' => 1,
+		'MAC limit exceeded'       => 1,
+		'MAC move limit exceeded'  => 1,
+		'Storm control in effect'  => 1,
+	);
+
+	my %targets = map { my @t = split(':', $_); $t[0] => $t[1]; } @targets;
+
+	my @failed = ();
+
+	foreach my $iface ($plugin->get_query_object($res, 'interface')) {
+		my $name = $plugin->get_query_object_value($iface, 'interface-name');
+		my $failed_status = undef;
+
+		if (scalar(@targets) && (! exists($targets{$name}))) {
+			next;
+		}
+
+		foreach my $vlan_member ($plugin->get_query_object($iface,
+				['interface-vlan-member-list', 'interface-vlan-member'])) {
+			my $status = $plugin->get_query_object_value($vlan_member,
+				'blocking-status');
+
+			if (defined($targets{$name})) {
+				if ($status ne $targets{$name}) {
+					$failed_status = "$status (should: $targets{$name})";
+					last;
+				}
+			}
+			elsif (defined $critical_map{$status}) {
+				$failed_status = $status;
+				last;
+			}
+		}
+
+		if ($failed_status) {
+			push @failed, { name => $name, status => $failed_status };
+		}
+	}
+
+	if (scalar(@failed)) {
+		$plugin->add_message(CRITICAL, scalar(@failed) . " interface"
+			. (scalar(@failed) == 1 ? "" : "s")
+			. " blocked: "
+			. join(", ", map { "$_->{'name'}: $_->{'status'}" } @failed));
+	}
+	else {
+		$plugin->add_message(OK, "forwarding state of all interfaces OK");
 	}
 }
 
