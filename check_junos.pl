@@ -178,9 +178,11 @@ sub send_query
 	return $res;
 }
 
-sub check_interface {
-	my $iface = shift;
-	my $opts  = shift || {};
+sub check_interface
+{
+	my $plugin  = shift;
+	my $iface   = shift;
+	my $opts    = shift || {};
 	my @targets = @_;
 
 	my $name = get_iface_name($iface);
@@ -403,6 +405,8 @@ sub get_liface_marker
 
 sub check_interfaces
 {
+	my $plugin  = shift;
+	my $junos   = shift;
 	my @targets = @_;
 
 	my $opts = {
@@ -427,7 +431,7 @@ sub check_interfaces
 
 	foreach my $iface (@interfaces) {
 		my $name = get_iface_name($iface);
-		my $status = check_interface($iface, $opts, @targets);
+		my $status = check_interface($plugin, $iface, $opts, @targets);
 
 		if ($status == 0) {
 			++$down_count;
@@ -459,7 +463,7 @@ sub check_interfaces
 
 			my @phy_interfaces = get_interfaces($junos, {}, $phy_name);
 			foreach my $phy_iface (@phy_interfaces) {
-				if (check_interface($phy_iface, {}, $phy_name) == 0) {
+				if (check_interface($plugin, $phy_iface, {}, $phy_name) == 0) {
 					++$phys_down_count;
 					push @phys_down_ifaces, "$name -> $phy_name";
 				}
@@ -496,6 +500,8 @@ sub check_interfaces
 
 sub check_chassis_environment
 {
+	my $plugin  = shift;
+	my $junos   = shift;
 	my @targets = @_;
 
 	my $res = send_query($junos, 'get_environment_information');
@@ -589,6 +595,8 @@ sub check_chassis_environment
 
 sub check_system_storage
 {
+	my $plugin  = shift;
+	my $junos   = shift;
 	my @targets = @_;
 
 	my $res = send_query($junos, 'get_system_storage');

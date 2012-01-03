@@ -346,7 +346,7 @@ sub run_checks
 		);
 
 		my $sub = $self->get_check_impl($check->{'name'});
-		$sub->(@targets);
+		$sub->($self, $self->{'junos'}, @targets);
 	}
 }
 
