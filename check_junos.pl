@@ -155,13 +155,13 @@ sub check_interface
 	my $opts    = shift || {};
 	my @targets = @_;
 
-	my $name = get_iface_name($iface);
-	my $admin_status = get_iface_admin_status($iface);
+	my $name = get_object_value_by_spec($iface, 'name');
+	my $admin_status = get_object_value_by_spec($iface, 'admin-status');
 
 	if ($admin_status !~ m/^up$/) {
 		if ((grep { $name =~ m/^$_$/; } @targets)
 				|| ($opts->{'with_description'} &&
-					get_iface_description($iface))) {
+					get_object_value_by_spec($iface, 'description'))) {
 			$plugin->add_message(CRITICAL,
 				"$name is not enabled");
 			return -1;
@@ -169,13 +169,14 @@ sub check_interface
 		return 1;
 	}
 
-	if (get_iface_status($iface) !~ m/^up$/i) {
+	if (get_object_value_by_spec($iface, 'oper-status') !~ m/^up$/i) {
 		return 0;
 	}
 
 	$plugin->add_perfdata(
 		label     => "'$name-input-bytes'",
-		value     => get_iface_traffic($iface, "input"),
+		value     => get_object_value_by_spec($iface,
+				['traffic-statistics', 'input-bytes']),
 		min       => 0,
 		max       => undef,
 		uom       => 'B',
@@ -183,7 +184,8 @@ sub check_interface
 	);
 	$plugin->add_perfdata(
 		label     => "'$name-output-bytes'",
-		value     => get_iface_traffic($iface, "output"),
+		value     => get_object_value_by_spec($iface,
+				['traffic-statistics', 'output-bytes']),
 		min       => 0,
 		max       => undef,
 		uom       => 'B',
@@ -221,7 +223,7 @@ sub get_interfaces
 	if (scalar(@targets)) {
 		@ret = grep {
 			my $i = $_;
-			grep { get_iface_name($i) =~ m/^$_$/ } @targets;
+			grep { get_object_value_by_spec($i, 'name') =~ m/^$_$/ } @targets;
 		} @ifaces;
 	}
 	elsif (! $opts->{'with_description'}) {
@@ -230,8 +232,8 @@ sub get_interfaces
 
 	if ($opts->{'with_description'}) {
 		foreach my $iface (@ifaces) {
-			my $name = get_iface_name($iface);
-			if (get_iface_description($iface)
+			my $name = get_object_value_by_spec($iface, 'name');
+			if (get_object_value_by_spec($iface, 'description')
 					&& (! grep { m/^$name$/; } @targets)) {
 				push @ret, $iface;
 			}
@@ -239,38 +241,11 @@ sub get_interfaces
 	}
 
 	{
-		my @i = map { get_iface_name($_) . " => " . get_iface_status($_) }
-			@ret;
+		my @i = map { get_object_value_by_spec($_, 'name'). " => "
+			. get_object_value_by_spec($_, 'oper-status') } @ret;
 		$plugin->verbose(3, "Interfaces: " . join(", ", @i));
 	}
 	return @ret;
-}
-
-sub get_obj_element
-{
-	my $obj  = shift;
-	my $elem = shift;
-
-	$elem = $obj->getElementsByTagName($elem);
-	if ((! $elem) || (! $elem->item(0))) {
-		return;
-	}
-	return $elem->item(0)->getFirstChild->getNodeValue;
-}
-
-sub get_object_value
-{
-	my $res = shift;
-
-	if (! $res) {
-		return;
-	}
-
-	if (ref($res) eq "XML::DOM::NodeList") {
-		$res = $res->item(0);
-	}
-
-	return $res->getFirstChild->getNodeValue;
 }
 
 sub get_object_by_spec
@@ -317,60 +292,16 @@ sub get_object_by_spec
 sub get_object_value_by_spec
 {
 	my $res = get_object_by_spec(@_);
-	return get_object_value($res);
-}
 
-sub get_iface_name
-{
-	my $iface = shift;
-	return get_obj_element($iface, 'name');
-}
-
-sub get_iface_description
-{
-	my $iface = shift;
-	return get_obj_element($iface, 'description');
-}
-
-sub get_iface_status
-{
-	my $iface = shift;
-	return get_obj_element($iface, 'oper-status');
-}
-
-sub get_iface_admin_status
-{
-	my $iface = shift;
-	return get_obj_element($iface, 'admin-status');
-}
-
-sub get_iface_traffic
-{
-	my $iface = shift;
-	my $type  = shift;
-
-	my $stats = get_obj_element($iface, 'traffic-statistics');
-	return get_obj_element($iface, "$type-bytes");
-}
-
-sub get_iface_first_logical
-{
-	my $iface = shift;
-	return $iface->getElementsByTagName('logical-interface')->item(0);
-}
-
-sub get_liface_marker
-{
-	my $liface = shift;
-
-	my $lag_stats = $liface->getElementsByTagName('lag-traffic-statistics')->item(0);
-	if (! $lag_stats) {
-		print STDERR "Cannot get marker for non-LACP interfaces yet!\n";
+	if (! $res) {
 		return;
 	}
 
-	my @markers = $lag_stats->getElementsByTagName('lag-marker');
-	return @markers;
+	if (ref($res) eq "XML::DOM::NodeList") {
+		$res = $res->item(0);
+	}
+
+	return $res->getFirstChild->getNodeValue;
 }
 
 sub check_interfaces
@@ -400,7 +331,7 @@ sub check_interfaces
 	my $have_lag_ifaces = 0;
 
 	foreach my $iface (@interfaces) {
-		my $name = get_iface_name($iface);
+		my $name = get_object_value_by_spec($iface, 'name');
 		my $status = check_interface($plugin, $iface, $opts, @targets);
 
 		if ($status == 0) {
@@ -419,13 +350,16 @@ sub check_interfaces
 
 		$have_lag_ifaces = 1;
 
-		my @markers = get_liface_marker(get_iface_first_logical($iface));
+		my @markers = get_object_by_spec($iface,
+			['logical-interface', 'lag-traffic-statistics', 'lag-marker']);
+
 		if (! @markers) {
+			print STDERR "Cannot get marker for non-LACP interfaces yet!\n";
 			next;
 		}
 
 		foreach my $marker (@markers) {
-			my $phy_name = get_iface_name($marker);
+			my $phy_name = get_object_value_by_spec($marker, 'name');
 			$phy_name =~ s/\.\d+$//;
 
 			$plugin->verbose(3, "Quering physical interface '$phy_name' "
