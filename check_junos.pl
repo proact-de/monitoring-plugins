@@ -148,36 +148,6 @@ $junos->disconnect();
 
 $plugin->nagios_exit($code, $msg);
 
-sub send_query
-{
-	my $device    = shift;
-	my $query     = shift;
-	my $queryargs = shift;
-
-	my $res;
-	my $err;
-
-	$plugin->verbose(3, "Sending query '$query' "
-		. join(", ", map { "$_ => $queryargs->{$_}" } keys %$queryargs)
-		. " to router.");
-
-	if (ref $queryargs) {
-		$res = $device->$query(%$queryargs);
-	} else {
-		$res = $device->$query();
-	}
-
-	if (! ref $res) {
-		return "ERROR: Failed to execute query '$query'";
-	}
-
-	$err = $res->getFirstError();
-	if ($err) {
-		return "ERROR: " . $err->{message};
-	}
-	return $res;
-}
-
 sub check_interface
 {
 	my $plugin  = shift;
@@ -238,7 +208,7 @@ sub get_interfaces
 	if ((scalar(@targets) == 1) && (! $opts->{'with_description'})) {
 		$args->{'interface_name'} = $targets[0];
 	}
-	$res = send_query($device, $cmd, $args);
+	$res = $plugin->send_query($cmd, $args);
 
 	if (! ref $res) {
 		$plugin->die($res);
@@ -504,7 +474,7 @@ sub check_chassis_environment
 	my $junos   = shift;
 	my @targets = @_;
 
-	my $res = send_query($junos, 'get_environment_information');
+	my $res = $plugin->send_query('get_environment_information');
 
 	my %status_map = (
 		OK      => OK,
@@ -599,7 +569,7 @@ sub check_system_storage
 	my $junos   = shift;
 	my @targets = @_;
 
-	my $res = send_query($junos, 'get_system_storage');
+	my $res = $plugin->send_query('get_system_storage');
 
 	foreach my $re (get_object_by_spec($res,
 			'multi-routing-engine-item')) {

@@ -350,6 +350,36 @@ sub run_checks
 	}
 }
 
+sub send_query
+{
+	my $self      = shift;
+	my $query     = shift;
+	my $queryargs = shift;
+
+	my $res;
+	my $err;
+
+	$self->verbose(3, "Sending query '$query' "
+		. join(", ", map { "$_ => $queryargs->{$_}" } keys %$queryargs)
+		. " to router.");
+
+	if (ref $queryargs) {
+		$res = $self->{'junos'}->$query(%$queryargs);
+	} else {
+		$res = $self->{'junos'}->$query();
+	}
+
+	if (! ref $res) {
+		return "ERROR: Failed to execute query '$query'";
+	}
+
+	$err = $res->getFirstError();
+	if ($err) {
+		return "ERROR: " . $err->{message};
+	}
+	return $res;
+}
+
 sub verbose
 {
 	my $self  = shift;
