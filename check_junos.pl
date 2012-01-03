@@ -126,7 +126,7 @@ foreach my $arg (@args) {
 }
 
 $plugin->configure();
-$plugin->add_checks($valid_checks, 'chassis_environment', @ARGV);
+$plugin->set_checks($valid_checks, 'chassis_environment', @ARGV);
 $junos = $plugin->connect();
 
 foreach my $check ($plugin->get_checks()) {

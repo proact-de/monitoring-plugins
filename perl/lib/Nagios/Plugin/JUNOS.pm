@@ -184,7 +184,7 @@ sub _add_single_check
 	push @{$self->{'conf'}->{'checks'}}, \%c;
 }
 
-sub add_checks
+sub set_checks
 {
 	my $self         = shift;
 	my $valid_checks = shift;
