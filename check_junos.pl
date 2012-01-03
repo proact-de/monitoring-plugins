@@ -47,8 +47,6 @@ use Nagios::Plugin::JUNOS;
 
 binmode STDOUT, ":utf8";
 
-my $valid_checks = "interfaces|chassis_environment|system_storage";
-
 # TODO:
 # * chassis_routing_engine: show chassis routing-engine (-> number and status)
 
@@ -119,38 +117,30 @@ my @args = (
 	},
 );
 
+my %checks = (
+	interfaces          => \&check_interfaces,
+	chassis_environment => \&check_chassis_environment,
+	system_storage      => \&check_system_storage,
+);
+
 my $junos = undef;
 
 foreach my $arg (@args) {
 	$plugin->add_arg($arg);
 }
 
+foreach my $check (keys %checks) {
+	$plugin->add_check_impl($check, $checks{$check});
+}
+
+$plugin->set_default_check('chassis_environment');
+
+# configure removes any options from @ARGV
 $plugin->configure();
-$plugin->set_checks($valid_checks, 'chassis_environment', @ARGV);
+$plugin->set_checks(@ARGV);
 $junos = $plugin->connect();
 
-foreach my $check ($plugin->get_checks()) {
-	my @targets = ();
-
-	if (defined $check->{'target'}) {
-		@targets = @{$check->{'target'}};
-	}
-
-	$plugin->set_thresholds(
-		warning  => $check->{'warning'},
-		critical => $check->{'critical'},
-	);
-
-	if ($check->{'name'} eq 'interfaces') {
-		check_interfaces(@targets);
-	}
-	elsif ($check->{'name'} eq 'chassis_environment') {
-		check_chassis_environment(@targets);
-	}
-	elsif ($check->{'name'} eq 'system_storage') {
-		check_system_storage(@targets);
-	}
-}
+$plugin->run_checks();
 
 my ($code, $msg) = $plugin->check_messages(join => ', ');
 

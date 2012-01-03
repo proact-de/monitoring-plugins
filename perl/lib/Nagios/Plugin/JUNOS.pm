@@ -107,6 +107,59 @@ sub add_arg
 	);
 }
 
+sub add_check_impl
+{
+	my $self = shift;
+	my $name = shift;
+	my $sub  = shift;
+
+	if ((! $name) || (! $sub) || (ref($sub) ne "CODE")) {
+		carp "Invalid check specification: $name -> $sub";
+		return;
+	}
+
+	if (! defined($self->{'check_impls'})) {
+		$self->{'check_impls'} = {};
+	}
+
+	$self->{'check_impls'}->{$name} = $sub;
+}
+
+sub get_check_impl
+{
+	my $self = shift;
+	my $name = shift;
+
+	if (! defined($self->{'check_impls'}->{$name})) {
+		return;
+	}
+	return $self->{'check_impls'}->{$name};
+}
+
+sub is_valid_check
+{
+	my $self = shift;
+	my $name = shift;
+
+	if (defined $self->{'check_impls'}->{$name}) {
+		return 1;
+	}
+	return;
+}
+
+sub set_default_check
+{
+	my $self = shift;
+	my $def  = shift;
+
+	if (! $self->is_valid_check($def)) {
+		carp "set_default_check: Check '$def' does not exist";
+		return;
+	}
+
+	$self->{'default_check'} = $def;
+}
+
 sub configure
 {
 	my $self = shift;
@@ -155,13 +208,12 @@ sub _get_conf
 
 sub _add_single_check
 {
-	my $self         = shift;
-	my $valid_checks = shift;
-	my @check        = split(m/,/, shift);
+	my $self  = shift;
+	my @check = split(m/,/, shift);
 
 	my %c = ();
 
-	if ($check[0] !~ m/\b(?:$valid_checks)\b/) {
+	if (! $self->is_valid_check($check[0])) {
 		return "ERROR: invalid check '$check[0]'";
 	}
 
@@ -188,10 +240,8 @@ sub _add_single_check
 
 sub set_checks
 {
-	my $self         = shift;
-	my $valid_checks = shift;
-	my $default      = shift;
-	my @checks       = @_;
+	my $self   = shift;
+	my @checks = @_;
 
 	my $err_str = "ERROR:";
 
@@ -200,12 +250,14 @@ sub set_checks
 	}
 
 	if (scalar(@checks) == 0) {
-		$self->{'conf'}->{'checks'}[0] = {
-			name     => $default,
-			target   => [],
-			warning  => undef,
-			critical => undef,
-		};
+		if ($self->{'default_check'}) {
+			$self->{'conf'}->{'checks'}->[0] = {
+				name     => $self->{'default_check'},
+				target   => [],
+				warning  => undef,
+				critical => undef,
+			};
+		}
 		return 1;
 	}
 
@@ -214,7 +266,7 @@ sub set_checks
 	foreach my $check (@checks) {
 		my $e;
 
-		$e = $self->_add_single_check($valid_checks, $check);
+		$e = $self->_add_single_check($check);
 		if ($e =~ m/^ERROR: (.*)$/) {
 			$err_str .= " $1,";
 		}
@@ -275,6 +327,27 @@ sub connect
 
 	$self->{'junos'} = $junos;
 	return $junos;
+}
+
+sub run_checks
+{
+	my $self = shift;
+
+	foreach my $check ($self->get_checks()) {
+		my @targets = ();
+
+		if (defined $check->{'target'}) {
+			@targets = @{$check->{'target'}};
+		}
+
+		$self->set_thresholds(
+			warning  => $check->{'warning'},
+			critical => $check->{'critical'},
+		);
+
+		my $sub = $self->get_check_impl($check->{'name'});
+		$sub->(@targets);
+	}
 }
 
 sub verbose
