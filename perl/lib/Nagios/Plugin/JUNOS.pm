@@ -438,6 +438,16 @@ sub get_query_object_value
 	return $res->getFirstChild->getNodeValue;
 }
 
+sub nagios_exit
+{
+	my $self = shift;
+
+	if ($self->{'junos'}) {
+		$self->{'junos'}->disconnect();
+	}
+	$self->SUPER::nagios_exit(@_);
+}
+
 sub verbose
 {
 	my $self  = shift;

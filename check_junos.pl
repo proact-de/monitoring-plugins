@@ -144,8 +144,6 @@ $plugin->run_checks();
 
 my ($code, $msg) = $plugin->check_messages(join => ', ');
 
-$junos->disconnect();
-
 $plugin->nagios_exit($code, $msg);
 
 sub check_interface
