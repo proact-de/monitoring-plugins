@@ -74,7 +74,8 @@ checkname[,target[,warning[,critical]]]
 
 The following checks are available:
   * interfaces: Status of interfaces. If a target is specified, only the
-    specified interface(s) will be taken into account.
+    specified interface(s) will be taken into account. The special target
+    '\@with_description' selects all interfaces with a non-empty description.
 
     If an aggregated interface is encountered, the physical interfaces will
     be checked as well.
