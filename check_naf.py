@@ -619,10 +619,18 @@ class CheckNAF(SNMPMonitoringPlugin):
 
 
 	def common_vol_idx(self, volume):
-		if volume.endswith('.snapshot'):
-			return None
+		if volume.endswith('.snapshot') or volume.endswith('.snapshot/'):
+			return (None, None)
 
 		idx = self.find_in_table(self.OID['df_FS_Index'], self.OID['df_FS_Name'] , volume)
+
+		if idx == None:
+			# Retry without/with Slash
+			if volume[-1] == '/':
+				idx = self.find_in_table(self.OID['df_FS_Index'], self.OID['df_FS_Name'] , volume[:-1])
+			else:
+				idx = self.find_in_table(self.OID['df_FS_Index'], self.OID['df_FS_Name'] , volume + '/')
+
 		if idx != None:
 			sn_idx = int(idx) + 1
 		else:
