@@ -58,7 +58,7 @@ my $plugin = Nagios::Plugin::JUNOS->new(
 	blurb     => 'Monitor Juniper™ Switches.',
 	usage     =>
 "Usage: %s [-v|--verbose] [-H <host>] [-p <port>] [-t <timeout]
-[-U <user>] [-P <password] check-tuple [...]",
+[-C] [-U <user>] [-P <password] check-tuple [...]",
 	license   =>
 "This nagios plugin is free software, and comes with ABSOLUTELY NO WARRANTY.
 It may be used, redistributed and/or modified under the terms of the 3-Clause
@@ -110,7 +110,15 @@ my %checks = (
 
 my $junos = undef;
 
+my $cache = {};
+
 $plugin->add_common_args();
+$plugin->add_arg({
+		spec    => 'caching|C',
+		usage   => '-C, --caching',
+		desc    => 'Enabling caching of API results',
+		default => 0,
+	});
 
 foreach my $check (keys %checks) {
 	$plugin->add_check_impl($check, $checks{$check});
@@ -184,21 +192,31 @@ sub get_interfaces
 	my @ifaces  = ();
 	my @ret     = ();
 
-	my $cmd = 'get_interface_information';
-	my $res;
-
-	my $args = { detail => 1 };
-
-	if ((scalar(@targets) == 1) && (! $opts->{'with_description'})) {
-		$args->{'interface_name'} = $targets[0];
+	if (defined($cache->{'interfaces'})) {
+		@ifaces = @{$cache->{'interfaces'}};
 	}
-	$res = $plugin->send_query($cmd, $args);
+	else {
+		my $cmd = 'get_interface_information';
+		my $res;
 
-	if (! ref $res) {
-		$plugin->die($res);
+		my $args = { detail => 1 };
+
+		if ((scalar(@targets) == 1) && (! $opts->{'with_description'})
+				&& (! $plugin->{'conf'}->{'caching'})) {
+			$args->{'interface_name'} = $targets[0];
+		}
+		$res = $plugin->send_query($cmd, $args);
+
+		if (! ref $res) {
+			$plugin->die($res);
+		}
+
+		@ifaces = $res->getElementsByTagName('physical-interface');
 	}
 
-	@ifaces = $res->getElementsByTagName('physical-interface');
+	if ($plugin->{'conf'}->{'caching'}) {
+		$cache->{'interfaces'} = \@ifaces;
+	}
 
 	@targets = map { s/\*/\.\*/g; s/\?/\./g; $_; } @targets;
 
