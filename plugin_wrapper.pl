@@ -64,6 +64,11 @@ if ($p_rc == 255) {
 
 my $p_output = join('', @p_output);
 print $p_output;
+
+if (($p_rc < 0) || ($p_rc > 3)) {
+	$p_rc = 3;
+}
+
 exit $p_rc;
 
 sub exit_usage {
