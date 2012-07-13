@@ -614,6 +614,10 @@ class SNMPMonitoringPlugin(MonitoringPlugin):
 		cmdline = self.__CMDLINE_get % oid
 		self.verbose(2, cmdline)
 
+		if oid in self.__SNMP_Cache:
+			self.verbose(2, "(CACHED) %s" % (self.__SNMP_Cache[oid]))
+			return self.__SNMP_Cache[oid]
+
 		cmd = os.popen(cmdline)
 		out = cmd.readline().rstrip().replace('"','')
 		retcode = cmd.close()
@@ -628,6 +632,8 @@ class SNMPMonitoringPlugin(MonitoringPlugin):
 			else:
 				self.back2nagios(3, 'Unknown error code "' + str(retcode) + '" from command line utils')
 
+		self.__SNMP_Cache[oid] = out
+
 		self.verbose(1, out)
 		return out
 
@@ -638,6 +644,10 @@ class SNMPMonitoringPlugin(MonitoringPlugin):
 
 		cmdline = self.__CMDLINE_walk % oid
 		self.verbose(2, cmdline)
+
+		if oid in self.__SNMP_Cache:
+			self.verbose(2, "(CACHED) %s" % (self.__SNMP_Cache[oid]))
+			return self.__SNMP_Cache[oid]
 
 		cmd = os.popen(cmdline)
 		out = cmd.readlines()
@@ -655,6 +665,8 @@ class SNMPMonitoringPlugin(MonitoringPlugin):
 
 		for line in range(0,len(out)):
 			out[line] = out[line].rstrip().replace('"','')
+
+		self.__SNMP_Cache[oid] = out
 
 		self.verbose(1, str(out))
 		return out
