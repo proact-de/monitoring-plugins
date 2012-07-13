@@ -647,7 +647,7 @@ class CheckNAF(SNMPMonitoringPlugin):
 		return target
 
 
-	def check_vol_data(self, volume, warn, crit):
+	def check_vol_data_one(self, volume, warn, crit):
 		(idx, sn_idx) = self.common_vol_idx(volume)
 
 		if idx == None:
@@ -682,7 +682,19 @@ class CheckNAF(SNMPMonitoringPlugin):
 		return self.remember_check('vol_data', returncode, output, perfdata=perfdata, target=target)
 
 
-	def check_vol_snap(self, volume, warn, crit):
+	def check_vol_data(self, volume, warn, crit):
+		if volume.startswith('ALL'):
+			volumes = self.SNMPWALK(self.OID['df_FS_Name'])
+			for vol in volumes:
+				if vol.endswith('.snapshot') or vol.endswith('.snapshot/'):
+					continue
+
+				self.check_vol_data_one(vol, warn, crit)
+		else:
+			return self.check_vol_data_one(volume, warn, crit)
+
+
+	def check_vol_snap_one(self, volume, warn, crit):
 		(idx, sn_idx) = self.common_vol_idx(volume)
 
 		if idx == None:
@@ -715,7 +727,19 @@ class CheckNAF(SNMPMonitoringPlugin):
 		return self.remember_check('vol_snap', returncode, output, perfdata=perfdata, target=target)
 
 
-	def check_vol_inode(self, volume, warn, crit):
+	def check_vol_snap(self, volume, warn, crit):
+		if volume.startswith('ALL'):
+			volumes = self.SNMPWALK(self.OID['df_FS_Name'])
+			for vol in volumes:
+				if vol.endswith('.snapshot') or vol.endswith('.snapshot/'):
+					continue
+
+				self.check_vol_snap_one(vol, warn, crit)
+		else:
+			return self.check_vol_snap_one(volume, warn, crit)
+
+
+	def check_vol_inode_one(self, volume, warn, crit):
 		(idx, sn_idx) = self.common_vol_idx(volume)
 
 		if idx == None:
@@ -741,7 +765,19 @@ class CheckNAF(SNMPMonitoringPlugin):
 		return self.remember_check('vol_inode', returncode, output, perfdata=perfdata, target=target)
 
 
-	def check_vol_files(self, volume, warn, crit):
+	def check_vol_inode(self, volume, warn, crit):
+		if volume.startswith('ALL'):
+			volumes = self.SNMPWALK(self.OID['df_FS_Name'])
+			for vol in volumes:
+				if vol.endswith('.snapshot') or vol.endswith('.snapshot/'):
+					continue
+
+				self.check_vol_inode_one(vol, warn, crit)
+		else:
+			return self.check_vol_inode_one(volume, warn, crit)
+
+
+	def check_vol_files_one(self, volume, warn, crit):
 		(idx, sn_idx) = self.common_vol_idx(volume)
 
 		if idx == None:
@@ -767,6 +803,18 @@ class CheckNAF(SNMPMonitoringPlugin):
 		perfdata.append({'label':'navft_' + target, 'value':fi_total, 'unit':None})
 
 		return self.remember_check('vol_files', returncode, output, perfdata=perfdata, target=target)
+
+
+	def check_vol_files(self, volume, warn, crit):
+		if volume.startswith('ALL'):
+			volumes = self.SNMPWALK(self.OID['df_FS_Name'])
+			for vol in volumes:
+				if vol.endswith('.snapshot') or vol.endswith('.snapshot/'):
+					continue
+
+				self.check_vol_files_one(vol, warn, crit)
+		else:
+			return self.check_vol_files_one(volume, warn, crit)
 
 
 
