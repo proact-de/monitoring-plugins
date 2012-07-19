@@ -168,6 +168,7 @@ if (! $plugin->opts->password) {
 	chomp($conf{'password'});
 
 	$term->setlflag($lflag | POSIX::ECHO);
+	$term->setattr(fileno(STDIN), TCSAFLUSH);
 	print "\n";
 }
 

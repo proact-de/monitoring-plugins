@@ -353,6 +353,7 @@ sub connect
 		chomp($self->{'conf'}->{'password'});
 
 		$term->setlflag($lflag | POSIX::ECHO);
+		$term->setattr(fileno(STDIN), TCSAFLUSH);
 		print "\n";
 	}
 
