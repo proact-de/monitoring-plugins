@@ -276,11 +276,15 @@ sub check_interfaces
 
 	foreach my $iface (@interfaces) {
 		my $name = $plugin->get_query_object_value($iface, 'name');
+		my $desc = $plugin->get_query_object_value($iface, 'description');
 		my $status = check_interface($plugin, $iface, $opts, @targets);
+
+		my $tmp;
 
 		if ($status == 0) {
 			++$down_count;
-			push @down_ifaces, $name;
+			$tmp = $name . ($desc ? " ($desc)" : "");
+			push @down_ifaces, $tmp;
 		}
 
 		if ($status <= 0) {
@@ -313,7 +317,8 @@ sub check_interfaces
 			foreach my $phy_iface (@phy_interfaces) {
 				if (check_interface($plugin, $phy_iface, {}, $phy_name) == 0) {
 					++$phys_down_count;
-					push @phys_down_ifaces, "$name -> $phy_name";
+					$tmp = $name . ($desc ? " ($desc)" : "");
+					push @phys_down_ifaces, "$tmp -> $phy_name";
 				}
 			}
 		}
