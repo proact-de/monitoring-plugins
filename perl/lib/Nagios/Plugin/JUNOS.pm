@@ -257,7 +257,28 @@ sub _add_single_check
 
 	$c{'target'} = undef;
 	if (defined($check[1])) {
-		$c{'target'} = [ split(m/\+/, $check[1]) ];
+		my @tmp = split(m/(\+|\~)/, $check[1]);
+
+		$c{'target'}  = [];
+		$c{'exclude'} = [];
+
+		for (my $i = 0; $i < scalar(@tmp); ++$i) {
+			my $t = $tmp[$i];
+
+			if ((($t ne "+") && ($t ne "~")) || ($i == $#tmp)) {
+				push @{$c{'target'}}, $t;
+				next;
+			}
+
+			++$i;
+
+			if ($t eq "+") {
+				push @{$c{'target'}}, $tmp[$i];
+			}
+			else {
+				push @{$c{'exclude'}}, $tmp[$i];
+			}
+		}
 	}
 
 	$c{'warning'}    = $check[2];
@@ -290,6 +311,7 @@ sub set_checks
 			$self->{'conf'}->{'checks'}->[0] = {
 				name     => $self->{'default_check'},
 				target   => [],
+				exclude  => [],
 				warning  => undef,
 				critical => undef,
 			};
@@ -371,10 +393,15 @@ sub run_checks
 	my $self = shift;
 
 	foreach my $check ($self->get_checks()) {
-		my @targets = ();
+		my $targets = [];
+		my $exclude = [];
 
 		if (defined $check->{'target'}) {
-			@targets = @{$check->{'target'}};
+			$targets = $check->{'target'};
+		}
+
+		if (defined $check->{'exclude'}) {
+			$exclude = $check->{'exclude'};
 		}
 
 		$self->set_thresholds(
@@ -383,7 +410,7 @@ sub run_checks
 		);
 
 		my $sub = $self->get_check_impl($check->{'name'});
-		$sub->($self, $self->{'junos'}, @targets);
+		$sub->($self, $self->{'junos'}, $targets, $exclude);
 	}
 }
 

@@ -252,19 +252,20 @@ sub check_interfaces
 {
 	my $plugin  = shift;
 	my $junos   = shift;
-	my @targets = @_;
+	my $targets = shift || [];
+	my $exclude = shift || [];
 
 	my $opts = {
 		with_description => 0,
 	};
 
-	if (grep { m/^\@with_description$/; } @targets) {
+	if (grep { m/^\@with_description$/; } @$targets) {
 		$opts->{'with_description'} = 1;
 
-		@targets = grep { ! m/^\@with_description$/; } @targets;
+		@$targets = grep { ! m/^\@with_description$/; } @$targets;
 	}
 
-	my @interfaces = get_interfaces($plugin, $opts, @targets);;
+	my @interfaces = get_interfaces($plugin, $opts, @$targets);;
 
 	my $down_count = 0;
 	my @down_ifaces = ();
@@ -277,7 +278,7 @@ sub check_interfaces
 	foreach my $iface (@interfaces) {
 		my $name = $plugin->get_query_object_value($iface, 'name');
 		my $desc = $plugin->get_query_object_value($iface, 'description');
-		my $status = check_interface($plugin, $iface, $opts, @targets);
+		my $status = check_interface($plugin, $iface, $opts, @$targets);
 
 		my $tmp;
 
@@ -339,15 +340,15 @@ sub check_interfaces
 	}
 
 	if ((! $down_count) && (! $phys_down_count)) {
-		if ((! scalar(@targets)) || $opts->{'with_description'}) {
+		if ((! scalar(@$targets)) || $opts->{'with_description'}) {
 			$plugin->add_message(OK, "all interfaces up"
 				. ($have_lag_ifaces
 					? " (including all LAG member interfaces)" : ""));
 		}
 		else {
 			$plugin->add_message(OK, "interface"
-				. (scalar(@targets) == 1 ? " " : "s ")
-				. join(", ", @targets) . " up"
+				. (scalar(@$targets) == 1 ? " " : "s ")
+				. join(", ", @$targets) . " up"
 				. ($have_lag_ifaces
 					? " (including all LAG member interfaces)" : ""));
 		}
@@ -358,7 +359,8 @@ sub check_interface_forwarding
 {
 	my $plugin  = shift;
 	my $junos   = shift;
-	my @targets = @_;
+	my $targets = shift || [];
+	my $exclude = shift || [];
 
 	my $res = $plugin->send_query('show ethernet-switching interfaces brief');
 
@@ -369,7 +371,7 @@ sub check_interface_forwarding
 		'Storm control in effect'  => 1,
 	);
 
-	my %targets = map { my @t = split(':', $_); $t[0] => $t[1]; } @targets;
+	my %targets = map { my @t = split(':', $_); $t[0] => $t[1]; } @$targets;
 
 	my @failed = ();
 
@@ -377,7 +379,7 @@ sub check_interface_forwarding
 		my $name = $plugin->get_query_object_value($iface, 'interface-name');
 		my $failed_status = undef;
 
-		if (scalar(@targets) && (! exists($targets{$name}))) {
+		if (scalar(@$targets) && (! exists($targets{$name}))) {
 			next;
 		}
 
@@ -418,7 +420,8 @@ sub check_chassis_environment
 {
 	my $plugin  = shift;
 	my $junos   = shift;
-	my @targets = @_;
+	my $targets = shift || [];
+	my $exclude = shift || [];
 
 	my $res = $plugin->send_query('get_environment_information');
 
@@ -437,7 +440,7 @@ sub check_chassis_environment
 	foreach my $item ($plugin->get_query_object($res, 'environment-item')) {
 		my $name = $plugin->get_query_object_value($item, 'name');
 
-		if (scalar(@targets) && (! grep { m/^$name$/ } @targets)) {
+		if (scalar(@$targets) && (! grep { m/^$name$/ } @$targets)) {
 			next;
 		}
 
@@ -448,7 +451,7 @@ sub check_chassis_environment
 		my $status = $plugin->get_query_object_value($item, 'status');
 
 		if ($status eq "Absent") {
-			if (! scalar(@targets)) {
+			if (! scalar(@$targets)) {
 				next;
 			}
 			# else: check this component
@@ -515,7 +518,8 @@ sub check_system_storage
 {
 	my $plugin  = shift;
 	my $junos   = shift;
-	my @targets = @_;
+	my $targets = shift || [];
+	my $exclude = shift || [];
 
 	my $res = $plugin->send_query('get_system_storage');
 
@@ -530,8 +534,8 @@ sub check_system_storage
 			my $name = $plugin->get_query_object_value($fs, 'filesystem-name');
 			my $mnt_pt = $plugin->get_query_object_value($fs, 'mounted-on');
 
-			if (scalar(@targets) && (! grep { m/^$name$/ } @targets)
-					&& (! grep { m/^$mnt_pt$/ } @targets)) {
+			if (scalar(@$targets) && (! grep { m/^$name$/ } @$targets)
+					&& (! grep { m/^$mnt_pt$/ } @$targets)) {
 				next;
 			}
 
