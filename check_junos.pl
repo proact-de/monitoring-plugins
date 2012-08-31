@@ -381,6 +381,19 @@ sub check_interface_forwarding
 
 	my @failed = ();
 
+	{
+		my @i = map {
+			$plugin->get_query_object_value($_, 'interface-name')
+			. " => { " .
+			join(", ", map {
+					$plugin->get_query_object_value($_, 'blocking-status')
+				} $plugin->get_query_object($_,
+					['interface-vlan-member-list', 'interface-vlan-member']))
+			. " }"
+		} $plugin->get_query_object($res, 'interface');
+		$plugin->verbose(3, "Interfaces: " . join(", ", @i));
+	}
+
 	foreach my $iface ($plugin->get_query_object($res, 'interface')) {
 		my $name = $plugin->get_query_object_value($iface, 'interface-name');
 		my $failed_status = undef;
