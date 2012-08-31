@@ -278,7 +278,13 @@ sub check_interfaces
 	foreach my $iface (@interfaces) {
 		my $name = $plugin->get_query_object_value($iface, 'name');
 		my $desc = $plugin->get_query_object_value($iface, 'description');
-		my $status = check_interface($plugin, $iface, $opts, @$targets);
+		my $status;
+
+		if (grep { m/^$name$/ } @$exclude) {
+			next;
+		}
+
+		$status = check_interface($plugin, $iface, $opts, @$targets);
 
 		my $tmp;
 
@@ -383,6 +389,10 @@ sub check_interface_forwarding
 			next;
 		}
 
+		if (grep { m/^$name$/ } @$exclude) {
+			next;
+		}
+
 		foreach my $vlan_member ($plugin->get_query_object($iface,
 				['interface-vlan-member-list', 'interface-vlan-member'])) {
 			my $status = $plugin->get_query_object_value($vlan_member,
@@ -441,6 +451,10 @@ sub check_chassis_environment
 		my $name = $plugin->get_query_object_value($item, 'name');
 
 		if (scalar(@$targets) && (! grep { m/^$name$/ } @$targets)) {
+			next;
+		}
+
+		if (grep { m/^$name$/ } @$exclude) {
 			next;
 		}
 
@@ -536,6 +550,10 @@ sub check_system_storage
 
 			if (scalar(@$targets) && (! grep { m/^$name$/ } @$targets)
 					&& (! grep { m/^$mnt_pt$/ } @$targets)) {
+				next;
+			}
+
+			if (grep { m/^$mnt_pt$/ } @$exclude) {
 				next;
 			}
 
