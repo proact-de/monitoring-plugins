@@ -40,6 +40,7 @@ use warnings;
 use utf8;
 
 use JUNOS::Device;
+use JUNOS::Trace;
 
 use FindBin qw( $Bin );
 use lib "$Bin/perl/lib";
@@ -128,6 +129,11 @@ $plugin->set_default_check('chassis_environment');
 
 # configure removes any options from @ARGV
 $plugin->configure();
+
+if ($plugin->{'conf'}->{'verbose'} > 3) {
+	JUNOS::Trace::init(1);
+}
+
 $plugin->set_checks(@ARGV);
 $junos = $plugin->connect();
 
