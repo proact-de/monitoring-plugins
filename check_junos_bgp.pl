@@ -194,7 +194,8 @@ if (! ref $neigh_info) {
 
 @peers = $neigh_info->getElementsByTagName('bgp-peer');
 if ($conf{'verbose'} >= 3) {
-	my @p = map { get_peer_address($_) . " => " . get_peer_description($_) } @peers;
+	my @p = map { (get_peer_address($_) // "<unknown address>")
+		. " => " . (get_peer_description($_) // "<unkown description>") } @peers;
 	verbose(3, "Peers: " . join(", ", @p));
 }
 
@@ -204,7 +205,8 @@ foreach my $check (@{$conf{'checks'}}) {
 
 	my @relevant_peers = get_relevant_peers($check, @peers);
 	if ($conf{'verbose'} >= 2) {
-		my @p = map { get_peer_address($_) . " => " . get_peer_description($_) } @relevant_peers;
+		my @p = map { (get_peer_address($_) // "<unknown address>")
+			. " => " . (get_peer_description($_) // "<unkown description>") } @relevant_peers;
 		verbose(2, "Relevant peers: " . join(", ", @p));
 	}
 
@@ -231,13 +233,24 @@ foreach my $check (@{$conf{'checks'}}) {
 		foreach my $peer (@relevant_peers) {
 			my $peer_addr = get_peer_address($peer);
 
+			if (! defined($peer_addr)) {
+				$peer_addr = "<unkown address>";
+			}
+
 			$value = get_peer_element($peer, 'peer-state');
+
+			if (! defined($value)) {
+				$value = "<unknown state>";
+			}
 
 			verbose(2, "Peer $peer_addr: peer-state = $value.");
 
 			if ($value eq 'Established') {
 				$value = $peer->getElementsByTagName('bgp-rib');
 				$value = get_peer_element($value->[0], 'active-prefix-count');
+				if (! $value) {
+					$value = 0;
+				}
 				$code  = $plugin->check_threshold($value);
 				$plugin->add_message($code, "peer $peer_addr: $value prefix"
 					. (($value == 1) ? "" : "es"));
@@ -493,8 +506,22 @@ sub get_peer_element
 	my $peer = shift;
 	my $elem = shift;
 
-	$elem = $peer->getElementsByTagName($elem);
-	return $elem->item(0)->getFirstChild->getNodeValue;
+	my $e;
+
+	if (! $peer) {
+		print STDERR "Cannot retrieve element '$elem' "
+			. "from undefined value.\n";
+		return;
+	}
+
+	$e = $peer->getElementsByTagName($elem);
+	if (! $e) {
+		print STDERR "Attribute '$elem' not found for peer.\n";
+		verbose(3, "Element was: " . Dumper($elem));
+		return;
+	}
+
+	return $e->item(0)->getFirstChild->getNodeValue;
 }
 
 sub get_peer_description
