@@ -195,7 +195,7 @@ if (! ref $neigh_info) {
 @peers = $neigh_info->getElementsByTagName('bgp-peer');
 if ($conf{'verbose'} >= 3) {
 	my @p = map { (get_peer_address($_) // "<unknown address>")
-		. " => " . (get_peer_description($_) // "<unkown description>") } @peers;
+		. " => " . (get_peer_description($_) // "<unknown description>") } @peers;
 	verbose(3, "Peers: " . join(", ", @p));
 }
 
@@ -206,7 +206,7 @@ foreach my $check (@{$conf{'checks'}}) {
 	my @relevant_peers = get_relevant_peers($check, @peers);
 	if ($conf{'verbose'} >= 2) {
 		my @p = map { (get_peer_address($_) // "<unknown address>")
-			. " => " . (get_peer_description($_) // "<unkown description>") } @relevant_peers;
+			. " => " . (get_peer_description($_) // "<unknown description>") } @relevant_peers;
 		verbose(2, "Relevant peers: " . join(", ", @p));
 	}
 
@@ -234,7 +234,7 @@ foreach my $check (@{$conf{'checks'}}) {
 			my $peer_addr = get_peer_address($peer);
 
 			if (! defined($peer_addr)) {
-				$peer_addr = "<unkown address>";
+				$peer_addr = "<unknown address>";
 			}
 
 			$value = get_peer_element($peer, 'peer-state');
