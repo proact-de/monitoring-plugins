@@ -517,7 +517,7 @@ sub get_peer_element
 	$e = $peer->getElementsByTagName($elem);
 	if ((! $e) || (! $e->item(0))) {
 		print STDERR "Attribute '$elem' not found for peer.\n";
-		verbose(3, "Peer was: " . Dumper($peer));
+		verbose(4, "Peer was: " . Dumper($peer));
 		return;
 	}
 
