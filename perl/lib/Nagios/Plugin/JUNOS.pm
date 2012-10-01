@@ -35,6 +35,8 @@ package Nagios::Plugin::JUNOS;
 
 use Carp;
 
+use Data::Dumper;
+
 use POSIX qw( :termios_h );
 
 use Nagios::Plugin;
@@ -437,6 +439,8 @@ sub send_query
 			$res = $self->{'junos'}->command($query);
 		}
 	}
+
+	$self->verbose(5, "Got response: " . Dumper(\$res));
 
 	if (! ref $res) {
 		return "ERROR: Failed to execute query '$query'";
