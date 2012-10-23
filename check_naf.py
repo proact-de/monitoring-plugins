@@ -633,6 +633,9 @@ class CheckNAF(SNMPMonitoringPlugin):
 
 		if idx != None:
 			sn_idx = int(idx) + 1
+			sn_name = self.SNMPGET(self.OID['df_FS_Name'], sn_idx)
+			if not (sn_name.endswith('.snapshot') or sn_name.endswith('.snapshot/')):
+				sn_idx = None
 		else:
 			sn_idx = None
 
@@ -656,9 +659,14 @@ class CheckNAF(SNMPMonitoringPlugin):
 		fs_total = long(self.SNMPGET(self.OID['df_FS_kBTotal'], idx)) * 1024L
 		fs_used = long(self.SNMPGET(self.OID['df_FS_kBUsed'], idx)) * 1024L
 		# fs_avail = long(self.SNMPGET(self.OID['df_FS_kBAvail'], idx)) * 1024L
-		sn_total = long(self.SNMPGET(self.OID['df_FS_kBTotal'], sn_idx)) * 1024L
-		sn_used = long(self.SNMPGET(self.OID['df_FS_kBUsed'], sn_idx)) * 1024L
-		# sn_avail = long(self.SNMPGET(self.OID['df_FS_kBAvail'], sn_idx)) * 1024L
+		if sn_idx != None:
+			sn_total = long(self.SNMPGET(self.OID['df_FS_kBTotal'], sn_idx)) * 1024L
+			sn_used = long(self.SNMPGET(self.OID['df_FS_kBUsed'], sn_idx)) * 1024L
+			# sn_avail = long(self.SNMPGET(self.OID['df_FS_kBAvail'], sn_idx)) * 1024L
+		else:
+			sn_total = 0L
+			sn_used = 0L
+			# sn_avail = 0L
 
 		mountedon = self.SNMPGET(self.OID['df_FS_Mounted_On'] + "." + idx)
 		status = self.Status2String['df_FS_Status'].get(self.SNMPGET(self.OID['df_FS_Status'] + "." + idx))
@@ -703,9 +711,14 @@ class CheckNAF(SNMPMonitoringPlugin):
 		# fs_total = long(self.SNMPGET(self.OID['df_FS_kBTotal'], idx)) * 1024L
 		# fs_used = long(self.SNMPGET(self.OID['df_FS_kBUsed'], idx)) * 1024L
 		# fs_avail = long(self.SNMPGET(self.OID['df_FS_kBAvail'], idx)) * 1024L
-		sn_total = long(self.SNMPGET(self.OID['df_FS_kBTotal'], sn_idx)) * 1024L
-		sn_used = long(self.SNMPGET(self.OID['df_FS_kBUsed'], sn_idx)) * 1024L
-		# sn_avail = long(self.SNMPGET(self.OID['df_FS_kBAvail'], sn_idx)) * 1024L
+		if sn_idx != None:
+			sn_total = long(self.SNMPGET(self.OID['df_FS_kBTotal'], sn_idx)) * 1024L
+			sn_used = long(self.SNMPGET(self.OID['df_FS_kBUsed'], sn_idx)) * 1024L
+			# sn_avail = long(self.SNMPGET(self.OID['df_FS_kBAvail'], sn_idx)) * 1024L
+		else:
+			sn_total = 0L
+			sn_used = 0L
+			# sn_avail = 0L
 
 		warn = self.range_dehumanize(warn, sn_total, unit=['b',])
 		crit = self.range_dehumanize(crit, sn_total, unit=['b',])
