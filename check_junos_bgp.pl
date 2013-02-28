@@ -133,11 +133,13 @@ my @args = (
 		spec    => 'logical-router|L=s',
 		usage   => '-L, --logical-router=ROUTER',
 		desc    => 'Logical Router',
+		default	=> '',
 	},
 	{
 		spec    => 'instance|I=s',
 		usage   => '-I, --instance=INSTANCE',
 		desc    => 'Instance',
+		default => '',
 	},
 
 );
@@ -335,10 +337,12 @@ sub get_neighbor_information
 	my %args;
 
 	if ($conf{'logical-router'} || $conf{'instance'}) {
-		if ($conf{'logical-router'})
-			$args{'logical-router'} = $conf{'logical-router'};
-	 	if ($conf{'instance'})
-			$args{'instance'}       = $conf{'instance'};
+		if ($conf{'logical-router'} ne '') {
+			$args{'logical-router'} = $conf{'logical-router'}; 
+		}
+	 	if ($conf{'instance'} ne '') {
+			$args{'instance'}       = $conf{'instance'}; 
+		}
 
 		$res = send_query($device, $query, \%args);
 	} else {
