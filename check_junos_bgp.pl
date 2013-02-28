@@ -60,8 +60,9 @@ my $plugin = Nagios::Plugin->new(
 	url       => 'http://oss.teamix.org/projects/monitoringplugins',
 	blurb     => 'Monitor Juniper™ Router\'s BGP tables.',
 	usage     =>
-"Usage: %s [-v|--verbose] [-H <host>] [-p <port>] [-t <timeout]
-[-U <user>] [-P <password] check-tuple [...]",
+"Usage: %s  [-v|--verbose] [-t <timeout]                                         \
+	[-H <host>] [-p <port>] [-U <user>] [-P <password]                   \
+	[-L <logical-system-name>] [-I <name of instance>] check-tuple [...] ",
 	license   =>
 "This nagios plugin is free software, and comes with ABSOLUTELY NO WARRANTY.
 It may be used, redistributed and/or modified under the terms of the 3-Clause
@@ -128,6 +129,17 @@ my @args = (
 		desc    => 'Password for login username',
 		default => '<prompt>',
 	},
+	{
+		spec    => 'logical-router|L=s',
+		usage   => '-L, --logical-router=ROUTER',
+		desc    => 'Logical Router',
+	},
+	{
+		spec    => 'instance|I=s',
+		usage   => '-I, --instance=INSTANCE',
+		desc    => 'Instance',
+	},
+
 );
 
 my %conf  = ();
@@ -318,7 +330,20 @@ sub get_neighbor_information
 	my @table;
 
 	my $query = "get_bgp_summary_information";
-	my $res   = send_query($device, $query);
+
+	my $res;
+	my %args;
+
+	if ($conf{'logical-router'} || $conf{'instance'}) {
+		if ($conf{'logical-router'})
+			$args{'logical-router'} = $conf{'logical-router'};
+	 	if ($conf{'instance'})
+			$args{'instance'}       = $conf{'instance'};
+
+		$res = send_query($device, $query, \%args);
+	} else {
+		my $res = send_query($device, $query);
+	}
 	my $err;
 
 	if (! ref $res) {
