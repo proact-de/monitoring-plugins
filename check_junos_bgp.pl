@@ -336,7 +336,7 @@ sub get_neighbor_information
 	my $res;
 	my %args;
 
-	if ($conf{'logical-router'} || $conf{'instance'}) {
+	if (($conf{'logical-router'} ne '') || ($conf{'instance'} ne '')) {
 		if ($conf{'logical-router'} ne '') {
 			$args{'logical-router'} = $conf{'logical-router'}; 
 		}
