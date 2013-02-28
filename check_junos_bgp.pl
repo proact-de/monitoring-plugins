@@ -346,7 +346,7 @@ sub get_neighbor_information
 
 		$res = send_query($device, $query, \%args);
 	} else {
-		my $res = send_query($device, $query);
+		$res = send_query($device, $query);
 	}
 	my $err;
 
