@@ -565,11 +565,11 @@ sub get_vc_members
 	if (! ref $vc) {
 		$plugin->die($vc);
 	}
-	my $vc_id = ($vc->getElementsByTagName('virtual-chassis-id-information'))[0];
-	$vc_id    = ($vc_id->getElementsByTagName('virtual-chassis-id'))[0];
-	$vc_id    = $vc_id->getFirstChild->getNodeValue;
+	#my $vc_id = ($vc->getElementsByTagName('virtual-chassis-id-information'))[0];
+	#$vc_id    = ($vc_id->getElementsByTagName('virtual-chassis-id'))[0];
+	#$vc_id    = $vc_id->getFirstChild->getNodeValue;
 
-	verbose(3, "Analyzing data from virtual chassis $vc_id.");
+	#verbose(3, "Analyzing data from virtual chassis $vc_id.");
 
 	@vc_members = ($vc->getElementsByTagName('member-list'))[0]->getElementsByTagName('member');
 	if ($conf{'verbose'} >= 3) {
