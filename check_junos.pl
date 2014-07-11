@@ -152,8 +152,12 @@ sub check_interface
 
 	my $name = $plugin->get_query_object_value($iface, 'name');
 	my $admin_status = $plugin->get_query_object_value($iface, 'admin-status');
+	my $if_desc = $plugin->get_query_object_value($iface, 'description');
+	my $if_mon = 1;	
 
-	if ($admin_status !~ m/^up$/) {
+	if ($if_desc =~ /NOALARM/) { $if_mon = 0; }
+
+	if (($admin_status !~ m/^up$/) && ($if_mon == 1)) {
 		if ((grep { $name =~ m/^$_$/; } @targets)
 				|| ($opts->{'with_description'} &&
 					$plugin->get_query_object_value($iface, 'description'))) {
@@ -265,7 +269,7 @@ sub check_interfaces
 		with_description => 0,
 	};
 
-	if (grep { m/^\@with_description$/; } @$targets) {
+	if (grep { /^\@with_description$/; } @$targets) {
 		$opts->{'with_description'} = 1;
 
 		@$targets = grep { ! m/^\@with_description$/; } @$targets;
@@ -285,6 +289,10 @@ sub check_interfaces
 		my $name = $plugin->get_query_object_value($iface, 'name');
 		my $desc = $plugin->get_query_object_value($iface, 'description');
 		my $status;
+
+		if ($desc =~ m/NOALARM/) {
+			next;
+		}
 
 		if (grep { m/^$name$/ } @$exclude) {
 			next;
