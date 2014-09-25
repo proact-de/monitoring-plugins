@@ -24,6 +24,7 @@
 
 import os
 import sys
+import re
 
 try:
 	from monitoringplugin import SNMPMonitoringPlugin
@@ -158,6 +159,16 @@ class CheckNAF(SNMPMonitoringPlugin):
 			'df_FS_MaxFilesAvail': '.1.3.6.1.4.1.789.1.5.4.1.11',
 			'df_FS_MaxFilesUsed': '.1.3.6.1.4.1.789.1.5.4.1.12',
 			'df_FS_MaxFilesPossible': '.1.3.6.1.4.1.789.1.5.4.1.13',
+
+			'aggr_Index': '.1.3.6.1.4.1.789.1.5.11.1.1',
+			'aggr_Name': '.1.3.6.1.4.1.789.1.5.11.1.2',
+			'aggr_State': '.1.3.6.1.4.1.789.1.5.11.1.5',
+			'aggr_Status': '.1.3.6.1.4.1.789.1.5.11.1.6',
+
+			'plex_Index': '.1.3.6.1.4.1.789.1.6.11.1.1',
+			'plex_Name': '.1.3.6.1.4.1.789.1.6.11.1.2',
+			'plex_Status': '.1.3.6.1.4.1.789.1.6.11.1.4',
+			'plex_Resync': '.1.3.6.1.4.1.789.1.6.11.1.5',
 			}
 
 	OWC = {
@@ -656,6 +667,11 @@ class CheckNAF(SNMPMonitoringPlugin):
 		if idx == None:
 			return self.remember_check('vol_data', self.RETURNCODE['UNKNOWN'], '"' + volume + '" not found!')
 
+		## BAD VOLUME NAME
+		badvol = re.search("\.\.$", volume)
+		if badvol:
+			return
+
 		fs_total = long(self.SNMPGET(self.OID['df_FS_kBTotal'], idx)) * 1024L
 		fs_used = long(self.SNMPGET(self.OID['df_FS_kBUsed'], idx)) * 1024L
 		# fs_avail = long(self.SNMPGET(self.OID['df_FS_kBAvail'], idx)) * 1024L
@@ -678,8 +694,13 @@ class CheckNAF(SNMPMonitoringPlugin):
 		crit = self.range_dehumanize(crit, fs_total, unit=['b',])
 
 		returncode = self.value_wc_to_returncode(fs_used, warn, crit)
-		output = volume + ': Used ' + self.value_to_human_binary(fs_used, 'B')
-		output += ' (' + '%3.1f' % fs_pctused + '%)'+ ' out of ' + self.value_to_human_binary(fs_total, 'B')
+
+		if returncode > 0:
+			output = volume + ': Used ' + self.value_to_human_binary(fs_used, 'B')
+			output += ' (' + '%3.1f' % fs_pctused + '%)'+ ' out of ' + self.value_to_human_binary(fs_total, 'B')
+		else:
+			output = ' DEBUG '
+
 		target = self.common_vol_shorten_target(volume)
 		perfdata = []
 		perfdata.append({'label':'navdu_' + target, 'value':fs_used, 'unit':'B', 'warn':warn, 'crit':crit, 'min':0})
@@ -758,6 +779,11 @@ class CheckNAF(SNMPMonitoringPlugin):
 		if idx == None:
 			return self.remember_check('vol_inode', self.RETURNCODE['UNKNOWN'], '"' + volume + '" not found!')
 
+		## BAD VOLUME NAME
+		badvol = re.search("\.\.$", volume)
+		if badvol:
+			return
+
 		in_used = long(self.SNMPGET(self.OID['df_FS_INodeUsed'] + '.' + idx))
 		in_free = long(self.SNMPGET(self.OID['df_FS_INodeFree'] + '.' + idx))
 		in_total = in_used + in_free
@@ -796,6 +822,11 @@ class CheckNAF(SNMPMonitoringPlugin):
 		if idx == None:
 			return self.remember_check('vol_files', self.RETURNCODE['UNKNOWN'], '"' + volume + '" not found!')
 
+		## BAD VOLUME NAME
+		badvol = re.search("\.\.$", volume)
+		if badvol:
+			return
+
 		fi_avail = long(self.SNMPGET(self.OID['df_FS_MaxFilesAvail'] + '.' + idx))
 		fi_used = long(self.SNMPGET(self.OID['df_FS_MaxFilesUsed'] + '.' + idx))
 		fi_possible = long(self.SNMPGET(self.OID['df_FS_MaxFilesPossible'] + '.' + idx))
@@ -830,9 +861,64 @@ class CheckNAF(SNMPMonitoringPlugin):
 			return self.check_vol_files_one(volume, warn, crit)
 
 
+	def check_aggr(self):
+		aggrs = self.SNMPWALK(self.OID['aggr_Name'])
+		rcode = 0
+		output = ''
+		for aggr in aggrs:
+			idx = self.find_in_table(self.OID['aggr_Index'], self.OID['aggr_Name'], aggr)
+			state = self.SNMPGET(self.OID['aggr_State'] + '.' + idx)
+			status = self.SNMPGET(self.OID['aggr_Status'] + '.' + idx)
+			rstatus = status.split(', ')
 
+			if state != 'online':
+				rcode = 2
+				output += aggr + ':' + state + '(' + rstatus[1] + ') '
 
+			if len(rstatus) >= 2:
+				if rstatus[1] != 'mirrored' and rstatus[1] != 'resyncing' and rstatus[1] != '64-bit' and rstatus[1] != '32-bit':
+					rcode = 2
+					output += aggr + ':' + state + '(' + rstatus[1] + ') '
+				if rstatus[1] == 'resyncing':
+					rcode = 1
+					output += aggr + ':' + state + '(' + rstatus[1] + ') '
 
+			if len(rstatus) == 5:
+				output += aggr + ':' + state + '(' + rstatus[4] + ') '
+
+		if output == '':
+			output = 'All aggregates are fine.'
+
+		return self.remember_check('aggr', rcode, output)
+
+	def check_plex(self):
+		plexs = self.SNMPWALK(self.OID['plex_Name'])
+		rcode = 0
+		output = ''
+		perfdata = []
+		for plex in plexs:
+			idx = self.find_in_table(self.OID['plex_Index'], self.OID['plex_Name'], plex)
+			status = self.SNMPGET(self.OID['plex_Status'] + '.' + idx)
+			resync = self.SNMPGET(self.OID['plex_Resync'] + '.' + idx)
+
+			# offline(1), resyncing(2), online(3)
+			if status == '2':
+				rcode = 1
+				output += plex + ':resyncing(' + resync + '%) '
+				perfdata.append({'label':plex, 'value':resync, 'unit':'%'})
+
+			if status == '1':
+				output += plex + ':offline '
+				rcode = 2
+				perfdata.append({'label':plex, 'value':'0', 'unit':'%'})
+
+			if status == '3':
+				perfdata.append({'label':plex, 'value':'100', 'unit':'%'})
+
+		if output == '':
+			output = 'All plexes are fine.'
+
+		return self.remember_check('plex', rcode, output, perfdata=perfdata)
 
 def main():
 	plugin = CheckNAF(pluginname='check_naf', tagforstatusline='NAF', description=u'Monitoring NetApp(tm) FAS systems', version='0.9')
@@ -942,6 +1028,10 @@ def main():
 			result = plugin.check_vol_inode(volume=target, warn=warn, crit=crit)
 		elif check =='vol_files':
 			result = plugin.check_vol_files(volume=target, warn=warn, crit=crit)
+		elif check =='aggr':
+			result = plugin.check_aggr()
+		elif check == 'plex':
+			result = plugin.check_plex()
 		else:
 			result = plugin.remember_check(check, plugin.RETURNCODE['UNKNOWN'], 'Unknown check "' + check + '"!')
 
