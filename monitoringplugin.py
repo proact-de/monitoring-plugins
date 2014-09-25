@@ -248,9 +248,10 @@ class MonitoringPlugin(object):
 				returncode = check.get('returncode') or 0
 				self.add_returncode(returncode)
 
-				out[returncode].append(tagtarget)
+				if returncode > 0:
+					out[returncode].append(tagtarget)
+					self.add_multilineoutput(self.RETURNSTRINGS[returncode] + ' ' + tagtarget + ' - ' + check.get('output'))
 
-				self.add_multilineoutput(self.RETURNSTRINGS[returncode] + ' ' + tagtarget + ' - ' + check.get('output'))
 				if check.get('multilineoutput'):
 					self.add_multilineoutput(check.get('multilineoutput'))
 
@@ -259,6 +260,10 @@ class MonitoringPlugin(object):
 				if len(out[retcode]):
 					statusline.append(str(len(out[retcode])) + ' ' + self.RETURNSTRINGS[retcode] + ': ' + ' '.join(out[retcode]))
 			statusline = ', '.join(statusline)
+
+			if statusline == '':
+				statusline = check['tag'] + ' is fine!'
+
 			self.add_output(statusline)
 
 		for pd in self.__brain_perfdata:
@@ -462,8 +467,11 @@ class SNMPMonitoringPlugin(MonitoringPlugin):
 			self.SNMPWALK_wrapper = self.__SNMPWALK_cmdline
 
 			# Building command lines
-			self.__CMDLINE_get = os.path.join(self.options.snmpcmdlinepath, 'snmpget') + ' -OqevtU '
-			self.__CMDLINE_walk = os.path.join(self.options.snmpcmdlinepath, 'snmpwalk') + ' -OqevtU '
+			#self.__CMDLINE_get = os.path.join(self.options.snmpcmdlinepath, 'snmpget') + ' -OqevtU '
+			#self.__CMDLINE_walk = os.path.join(self.options.snmpcmdlinepath, 'snmpwalk') + ' -OqevtU '
+
+			self.__CMDLINE_get = os.path.join(self.options.snmpcmdlinepath, 'snmpget') + ' -Oqev -t30 -r30 '
+			self.__CMDLINE_walk = os.path.join(self.options.snmpcmdlinepath, 'snmpwalk') + ' -Oqev -t30 -r30 '
 
 			if self.options.snmpversion in [1, 2, '1', '2', '2c']:
 				if self.options.snmpversion in [2, '2']:
