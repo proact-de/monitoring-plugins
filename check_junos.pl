@@ -155,7 +155,7 @@ sub check_interface
 	my $if_desc = $plugin->get_query_object_value($iface, 'description');
 	my $if_mon = 1;	
 
-	if ($if_desc =~ /NOALARM/) { $if_mon = 0; }
+	if (defined($if_desc) and $if_desc =~ /NOALARM/) { $if_mon = 0; }
 
 	if (($admin_status !~ m/^up$/) && ($if_mon == 1)) {
 		if ((grep { $name =~ m/^$_$/; } @targets)
@@ -290,7 +290,7 @@ sub check_interfaces
 		my $desc = $plugin->get_query_object_value($iface, 'description');
 		my $status;
 
-		if ($desc =~ m/NOALARM/) {
+		if (defined($desc) and $desc =~ m/NOALARM/) {
 			next;
 		}
 
@@ -460,7 +460,7 @@ sub check_chassis_environment
 	my $targets = shift || [];
 	my $exclude = shift || [];
 
-	my $res = $plugin->send_query('get_environment_information');
+	my $res = $plugin->send_query('show chassis environment');
 
 	my %status_map = (
 		OK      => OK,
